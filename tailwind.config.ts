@@ -11,7 +11,7 @@ const config: Config = {
       sm: '480px',
       md: '768px',
       lg: '1024px',
-      xl: '1040px',
+      xl: '1280px',
     },
     extend: {
       colors: {
@@ -39,6 +39,7 @@ const config: Config = {
       },
       boxShadow: {
         'btn': '4px 4px #000',
+        'card': '4px 4px #CEC22E',
       },
       fontFamily: {
         josefin: ['Josefin Sans', 'sans-serif'],
