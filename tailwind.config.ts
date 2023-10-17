@@ -39,6 +39,7 @@ const config: Config = {
       },
       boxShadow: {
         'btn': '4px 4px #000',
+        'btn-orange': '4px 4px #e05d27',
         'card': '4px 4px #CEC22E',
       },
       fontFamily: {

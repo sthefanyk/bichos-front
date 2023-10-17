@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import './globals.css'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 export const metadata: Metadata = {
   title: 'Bichos',
@@ -16,7 +17,9 @@ export default function RootLayout({
   return (
     <html lang="pt-br">
       <body className="overlay-x-hidden font-jakarta">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         {/* <Footer /> */}
       </body>
     </html>
