@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { setCookie, parseCookies, destroyCookie } from "nookies";
 
 type User = {
+    username: string;
     name: string;
     email: string;
 };
@@ -54,7 +55,8 @@ export function AuthProvider({ children }: any) {
 				const userData = responseData.user;
 				setUser({
 					email: userData.email,
-					name: userData.username
+					username: userData.username,
+					name: userData.name
 				});
 
 				

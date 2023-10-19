@@ -24,6 +24,7 @@ export default function Person() {
         const data = {
             email,
             username,
+            name,
             cpf,
             date_birth,
             full_name,

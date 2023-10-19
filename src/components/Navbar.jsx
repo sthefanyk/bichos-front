@@ -1,10 +1,12 @@
 "use client";
+import { AuthContext } from "@/contexts/AuthContext";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { AiOutlineClose, AiOutlineMenu } from "react-icons/ai";
 
 const Navbar = ({ page }) => {
     const [menu, setMenu] = useState(true);
+    const { isAuthenticated, user, logOut } = useContext(AuthContext);
 
     const handleMenu = () => {
         setMenu((prevMenu) => !prevMenu);
@@ -53,24 +55,37 @@ const Navbar = ({ page }) => {
                             </Link>
                         </div>
                     </div>
-                    <div className="flex gap-x-8">
-                        <Link
-                            href="/register"
-                            className="inline-flex px-8 p-y-3 h-12 justify-center items-center"
-                        >
-                            <span className="text-xl font-semibold text-beige-normal">
-                                Cadastrar
-                            </span>
-                        </Link>
-                        <Link
-                            href="/login"
-                            className="inline-flex px-8 p-y-3 h-12 bg-lime-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal"
-                        >
-                            <span className="text-xl font-semibold text-darktext-normal shadow-sm">
-                                Entrar
-                            </span>
-                        </Link>
-                    </div>
+                    {!isAuthenticated ?
+                        (<div className="flex gap-x-8">
+                            <Link
+                                href="/register"
+                                className="inline-flex px-8 p-y-3 h-12 justify-center items-center"
+                            >
+                                <span className="text-xl font-semibold text-beige-normal">
+                                    Cadastrar
+                                </span>
+                            </Link>
+                            <Link
+                                href="/login"
+                                className="inline-flex px-8 p-y-3 h-12 bg-lime-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal"
+                            >
+                                <span className="text-xl font-semibold text-darktext-normal shadow-sm">
+                                    Entrar
+                                </span>
+                            </Link>
+                        </div>)
+                        : (<div className={`inline-flex max-w-max px-8 py-3 h-14 bg-orangee-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal
+                            gap-2
+                        `}>
+                            <div className="flex flex-col">
+                                <span className="font-semibold text-lg text-lighttext-normal">{user.name === '' ? user.username : user.name}</span>
+                                <span className="font-medium text-md text-lighttext-normal">@{user.username}</span>
+                            </div>
+                            
+                            <button className="py-2 px-4 border border-btn" onClick={logOut}>Sair</button>
+                        
+                        </div>)
+                    }
                 </div>
             </div>
 

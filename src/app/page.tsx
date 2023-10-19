@@ -5,7 +5,9 @@ import Header from '@/components/Header';
 
 export default async function Home() {
 
-    const posts = await fetch("http://localhost:3000/post/adopt")
+    const posts = await fetch("http://localhost:3000/post/adopt", {
+        cache: 'no-store'
+    })
 		.then((response) => {
 			if (!response.ok) {
 				throw new Error("Erro na solicitação");
@@ -15,7 +17,6 @@ export default async function Home() {
 		.then((responseData) => {
             return responseData.data;
 		})
-
     return (
         <>
             {/* Navbar */}
