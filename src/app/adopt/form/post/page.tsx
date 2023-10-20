@@ -1,4 +1,5 @@
 import AddMedVac from "@/components/AddMedVac";
+import DiseaseAllergy from "@/components/DiseaseAllergy";
 import AddPersonality from "@/components/AddPersonality";
 import CheckBox from "@/components/CheckBox";
 import Navbar from "@/components/Navbar";
@@ -111,9 +112,18 @@ export default function PageAdoptFormPost() {
                             <CheckBox id="castrado" label="Castrado(a)"/>
                             <div className="flex flex-col gap-2">
                                 <p className="text-md font-medium">Medicamentos</p>
-                                <AddMedVac />
+                                <AddMedVac medOrVac="Medicamento"/>
                             </div>
-                            
+
+                            <div className="flex flex-col gap-2">
+                                <p className="text-md font-medium">Vacinas</p>
+                                <AddMedVac medOrVac="Vacina"/>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <p className="text-md font-medium">Doenças e Alergias</p>
+                                <DiseaseAllergy />
+                            </div>                            
                         </section>
                     </div>
                 </form>

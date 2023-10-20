@@ -13,7 +13,7 @@ const Navbar = ({ page }) => {
     };
 
     return (
-        <nav className="fixed w-screen bg-orangee-normal">
+        <nav className="fixed w-screen bg-orangee-normal z-50">
             {/* Nav Bar */}
             <div className="flex justify-between items-center h-20 lg:h-24 px-16 lg:px-32">
                 {/* Mobile */}
