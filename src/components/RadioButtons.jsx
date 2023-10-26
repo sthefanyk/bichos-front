@@ -1,7 +1,7 @@
 "use client"
 import { useState } from 'react';
 
-const RadioButtons = () => {
+const RadioButtons = ({register}) => {
     const [selectedOption, setSelectedOption] = useState('');
 
     return (
@@ -9,11 +9,9 @@ const RadioButtons = () => {
         <fieldset className="flex gap-2">
           <input
             type="radio"
-            name="type"
-            id="cat"
             value="G"
-            onChange={(e) => setSelectedOption(e.target.value)}
             className="sr-only"
+            {...register('type_animal')}
           />
           <label htmlFor="cat" className={`
             border border-black rounded-md p-2 h-10 w-10 cursor-pointer
@@ -23,10 +21,8 @@ const RadioButtons = () => {
           </label>
           <input
             type="radio"
-            name="type"
-            id="dog"
             value="C"
-            onChange={(e) => setSelectedOption(e.target.value)}
+            {...register('type_animal')}
             className='sr-only'
           />
           <label htmlFor="dog" className={`

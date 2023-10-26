@@ -60,13 +60,13 @@ export default function Person() {
         <div className="flex flex-col h-screen bg-beige-normal">
             <nav className="bg-darkblue-normal h-20">
                 <div className="flex items-center justify-between px-16 lg:px-32 h-20">
-                    <a href="" className="cursor-pointer">
+                    <Link href="/" className="cursor-pointer">
                         <img
                             src="../../logo-login.svg"
                             alt=""
                             className="w-[75%]"
                         />
-                    </a>
+                    </Link>
                     <Link href="/login">
                         <p className="text-lighttext-normal text-md font-semibold">
                             Já possui conta?{" "}

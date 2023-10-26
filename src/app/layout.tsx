@@ -14,11 +14,16 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  
+
   return (
     <html lang="pt-br">
       <body className="overlay-x-hidden font-jakarta">
         <AuthProvider>
-          {children}
+          <>
+            <Navbar />
+            {children}
+          </>
         </AuthProvider>
         {/* <Footer /> */}
       </body>

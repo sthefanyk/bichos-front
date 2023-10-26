@@ -3,14 +3,22 @@ import { AuthContext } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useState, useContext } from "react";
 import { AiOutlineClose, AiOutlineMenu } from "react-icons/ai";
+import { usePathname,  } from 'next/navigation';
 
-const Navbar = ({ page }) => {
+const Navbar = () => {
+    const page = usePathname();
     const [menu, setMenu] = useState(true);
     const { isAuthenticated, user, logOut } = useContext(AuthContext);
+    const [isOpenModalProfile, setIsOpenModalProfile] = useState(false);
+    const [isHoverProfile, setHoverProfile] = useState(false);
 
     const handleMenu = () => {
         setMenu((prevMenu) => !prevMenu);
     };
+
+    if (page.includes('/login') || page.includes('/register')) {
+        return null;
+    }
 
     return (
         <nav className="fixed w-screen bg-orangee-normal z-50">
@@ -20,7 +28,7 @@ const Navbar = ({ page }) => {
                 <div className="lg:hidden flex justify-between items-center w-full">
                     <div>
                         <Link href="/" className="cursor-pointer">
-                            <img src="logo1.svg" alt=""/>
+                            <img src="../../public/logo1.svg" alt=""/>
                         </Link>
                     </div>
 
@@ -56,7 +64,7 @@ const Navbar = ({ page }) => {
                         </div>
                     </div>
                     {!isAuthenticated ?
-                        (<div className="flex gap-x-8">
+                        (<div className="relative flex gap-x-8">
                             <Link
                                 href="/register"
                                 className="inline-flex px-8 p-y-3 h-12 justify-center items-center"
@@ -74,17 +82,49 @@ const Navbar = ({ page }) => {
                                 </span>
                             </Link>
                         </div>)
-                        : (<div className={`inline-flex max-w-max px-8 py-3 h-14 bg-orangee-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal
-                            gap-2
-                        `}>
-                            <div className="flex flex-col">
-                                <span className="font-semibold text-lg text-lighttext-normal">{user.name === '' ? user.username : user.name}</span>
-                                <span className="font-medium text-md text-lighttext-normal">@{user.username}</span>
+                        : (
+                            <div
+                                className={`
+                                    ${!isOpenModalProfile ? `
+                                        relative
+                                        inline-flex max-w-max px-8 py-3 h-14 bg-orangee-normal rounded-md 
+                                        justify-center items-center shadow-btn border border-darktext-normal gap-2
+
+                                        hover:bg-white hover:shadow-none hover:text-black
+                                    ` : `
+                                        relative
+                                        inline-flex max-w-max px-8 py-3 h-14 bg-white rounded-md 
+                                        justify-center items-center gap-2
+                                    `}
+                                `}
+                                onClick={() => setIsOpenModalProfile((isOpen) => !isOpen)}
+                                onMouseLeave={() => setHoverProfile(false)}
+                                onMouseEnter={() => setHoverProfile(true)}
+                            >
+                                <div className="flex flex-col">
+                                    {/* <span className="font-semibold text-lg text-lighttext-normal">{user.name === '' ? user.username : user.name}</span>
+                                    <span className="font-medium text-md text-lighttext-normal">@{user.username}</span> */}
+
+                                    <span className={`font-semibold text-lg ${!isOpenModalProfile && !isHoverProfile ? `text-white` : `text-black`}`}>{user.name === '' ? user.username : user.name}</span>
+                                    <span className={`font-medium text-md ${!isOpenModalProfile && !isHoverProfile ? `text-white` : `text-black`}`}>@{user.username}</span>
+                                </div>
+
+                                {isOpenModalProfile && (
+                                    <div className="absolute right-0 top-full z-51 bg-white p-2 mt-2 rounded-lg w-[200px] border border-darkblue-normal divide-y-[2px] divide-darkblue-normal">
+                                        <Link href="/profile">
+                                            <div className="p-2 w-full">
+                                                <span className="">Meu perfil</span>
+                                            </div>
+                                        </Link>
+                                        <button onClick={logOut} className="flex justify-start p-2 w-full">
+                                            <span className="">Sair</span>
+                                        </button>
+                                    </div>
+                                )}
+                                
+                                
                             </div>
-                            
-                            <button className="py-2 px-4 border border-btn" onClick={logOut}>Sair</button>
-                        
-                        </div>)
+                        )
                     }
                 </div>
             </div>

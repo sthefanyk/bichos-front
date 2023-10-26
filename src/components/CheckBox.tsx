@@ -1,31 +1,22 @@
 "use client"
-import { useState } from "react";
 import { BsCheckLg } from "react-icons/bs";
 
 interface CheckBoxProps {
   disable?: boolean;
   defaultChecked?: boolean;
   id: string;
-  label: string;
-  handleChecked?: (state: boolean) => void;
+  label: any;
+  isChecked: boolean;
+  setIsChecked: any;
 }
 
 const CheckBox = (props: CheckBoxProps) => {
-
-  const [state, setState] = useState(true);
-  const { handleChecked, ...inputProps } = props;
-
-  const check = () => {
-    setState((stt) => !stt);
-
-    if (typeof props.handleChecked === 'function') {
-      props.handleChecked(state);
-    }
-  };
+  const { setIsChecked, isChecked, ...inputProps } = props;
 
   return (
     <div className="flex gap-2">
-        <input type="checkbox" name="" onChange={check}
+        <input type="checkbox" name="" onChange={() => setIsChecked(!isChecked)} 
+            checked={isChecked}
             className={`
                 peer relative appearance-none shrink-0 w-4 h-4 border border-black rounded-sm mt-1 bg-white
                 focus:outline-none focus:ring-offset-0 focus:ring-1 focus:ring-blue-100
@@ -36,11 +27,11 @@ const CheckBox = (props: CheckBoxProps) => {
         />
         <BsCheckLg className={`
             absolute h-4 w-4 mt-1
-            hidden peer-checked:block
+            hidden peer-checked:block 
             pointer-events-none
             text-white font-bold
         `} />
-        <label htmlFor={props.id}>{props.label}</label>
+        <label htmlFor={props.id} className="peer-checked:text-darkblue-normal">{props.label}</label>
     </div>
   )
 }
