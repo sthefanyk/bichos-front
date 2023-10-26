@@ -3,8 +3,8 @@ import React from "react";
 
 const Header = () => {
     return (
-        <header className="px-16 lg:px-32 bg-orangee-normal pt-20 lg:pt-24">
-            <div className="flex flex-col lg:flex-row items-center justify-between">
+        <header className="flex justify-center bg-orangee-normal pt-20 lg:pt-24">
+            <div className="flex flex-col lg:flex-row items-center justify-between w-[80%]">
                 <div className="flex flex-col py-20 gap-7 grow">
                     <p className="text-beige-normal text-lg lg:text-xl font-semibold">
                         Divulgação, adoção e apadrinhamento de animais

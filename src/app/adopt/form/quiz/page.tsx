@@ -1,6 +1,6 @@
 import FormAdopt from "@/components/FormAdopt";
 
-export default function PageAdoptFormPost() {
+export default function PageAdoptFormQuiz() {
     return (
         <>
             <div className="relative flex flex-col justify-center items-center h-[350px] lg:h-[400px] w-full pt-20 lg:pt-24 -z-50">
@@ -21,9 +21,22 @@ export default function PageAdoptFormPost() {
                 </div>
                 <div className="bg-beige-normal h-1/3 w-full"></div>
             </div>
-            <div className="bg-beige-normal flex justify-center w-full pb-[100px]">
-                <FormAdopt />
+            <div className="flex flex-col items-center bg-beige-normal w-full">
+                <div className="flex flex-col pb-[100px] w-[80%]">
+                    <h1 className="text-2xl font-semibold mb-4">Sobre você</h1>
+                    <p className="text-lg font-semibold">Você está ciente que esta é uma adoção conjunta?</p>
+                    <p className="text-gray-600">Este formulário é para a adoção de dois ou mais animais</p>
+
+
+                    <div className={`
+                        p-4 rounded-lg
+                        bg-white border border-md border-black
+                    `}>
+                        <p className="text-lg font-normal">Você está ciente que esta é uma adoção conjunta?</p>
+                    </div>
+                </div>
             </div>
+            
         </>
     )
 }

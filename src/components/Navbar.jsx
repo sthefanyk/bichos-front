@@ -21,9 +21,9 @@ const Navbar = () => {
     }
 
     return (
-        <nav className="fixed w-screen bg-orangee-normal z-50">
+        <nav className="fixed w-screen bg-orangee-normal z-50 flex flex-col items-center">
             {/* Nav Bar */}
-            <div className="flex justify-between items-center h-20 lg:h-24 px-16 lg:px-32">
+            <div className="flex justify-between w-[80%] items-center h-20 lg:h-24">
                 {/* Mobile */}
                 <div className="lg:hidden flex justify-between items-center w-full">
                     <div>
@@ -87,24 +87,22 @@ const Navbar = () => {
                                 className={`
                                     ${!isOpenModalProfile ? `
                                         relative
-                                        inline-flex max-w-max px-8 py-3 h-14 bg-orangee-normal rounded-md 
-                                        justify-center items-center shadow-btn border border-darktext-normal gap-2
+                                        inline-flex max-w-max px-4 py-3 h-14 bg-orangee-normal rounded-md 
+                                        justify-center items-center shadow-btn border border-darktext-normal gap-4
 
                                         hover:bg-white hover:shadow-none hover:text-black
                                     ` : `
                                         relative
-                                        inline-flex max-w-max px-8 py-3 h-14 bg-white rounded-md 
-                                        justify-center items-center gap-2
+                                        inline-flex max-w-max px-4 py-3 h-14 bg-white rounded-md 
+                                        justify-center items-center gap-4
                                     `}
                                 `}
                                 onClick={() => setIsOpenModalProfile((isOpen) => !isOpen)}
                                 onMouseLeave={() => setHoverProfile(false)}
                                 onMouseEnter={() => setHoverProfile(true)}
                             >
+                                <div className="h-[45px] aspect-[1/1] bg-lime-normal rounded-full"></div>
                                 <div className="flex flex-col">
-                                    {/* <span className="font-semibold text-lg text-lighttext-normal">{user.name === '' ? user.username : user.name}</span>
-                                    <span className="font-medium text-md text-lighttext-normal">@{user.username}</span> */}
-
                                     <span className={`font-semibold text-lg ${!isOpenModalProfile && !isHoverProfile ? `text-white` : `text-black`}`}>{user.name === '' ? user.username : user.name}</span>
                                     <span className={`font-medium text-md ${!isOpenModalProfile && !isHoverProfile ? `text-white` : `text-black`}`}>@{user.username}</span>
                                 </div>
@@ -133,7 +131,7 @@ const Navbar = () => {
             <ul
                 className={
                     !menu
-                        ? "block px-16 lg:px-32 bg-beige-normal divide-y divide-darkblue-normal"
+                        ? "block px-16 lg:px-32 bg-beige-normal divide-y divide-darkblue-normal w-full"
                         : "hidden"
                 }
             >

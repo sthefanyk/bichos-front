@@ -9,7 +9,7 @@ const Paginate = () => {
     const styleInactiveText = "text-md lg:text-md font-semibold text-darkblue-normal shadow-sm";
 
     return (
-        <div className="flex gap-2 w-full justify-end">
+        <div className="flex gap-2 w-[80%] justify-end">
             <button
                 type="button"
                 className={selected == 1 ? styleActiveButton : styleInactiveButton}
