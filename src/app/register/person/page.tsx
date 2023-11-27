@@ -1,360 +1,461 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useContext, useState } from "react";
 
-export default function Person() {
-    const [email, setEmail] = useState("");
-    const [full_name, setFullName] = useState("");
-    const [date_birth, setDateBirth] = useState("");
-    const [cpf, setCpf] = useState("");
-    const [city, setCity] = useState("");
-    const [state, setState] = useState("");
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { BsCaretDownFill } from "react-icons/bs";
+import { AiOutlineCloseCircle } from "react-icons/ai";
+import { LocalizationContext } from "@/contexts/LocalizationContext";
 
-    const [name, setName] = useState("");
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [passwordConfirm, setPasswordConfirm] = useState("");
+const createPersonSchema = z.object({
+    email: z
+        .string()
+        .min(1, "Por favor, insira o e-mail.")
+        .email("E-mail inválido."),
+    full_name: z.string().min(1, "Por favor, insira o nome completo."),
+    date_birth: z
+        .string()
+        .refine(
+            (date) => date !== "",
+            "Por favor, insira a data de nascimento."
+        )
+        .refine(
+            (date) => new Date(date) < new Date(),
+            "Por favor, insira uma data válida."
+        ),
+    cpf: z.string().min(11, "Por favor, insira o cpf."),
+    state: z.string().min(1, "Por favor, informe o estado."),
+    city: z.string().min(1, "Por favor, informe a cidade."),
+});
+
+const createUserSchema = z
+    .object({
+        name: z.string().min(1, "Por favor, insira o nickname."),
+        username: z.string().min(1, "Por favor, insira o username."),
+        password: z.string().min(1, "Por favor, insira a senha."),
+        passwordConfirm: z.string().min(1, "Por favor, confirme a senha."),
+    })
+    .refine((data) => data.password === data.passwordConfirm, {
+        message: "As senhas não coincidem.",
+        path: ["passwordConfirm"],
+    });
+
+type CreatePersonData = z.infer<typeof createPersonSchema>;
+type CreateUserData = z.infer<typeof createUserSchema>;
+
+export default function PersonPage() {
+    const person = useForm<CreatePersonData>({
+        resolver: zodResolver(createPersonSchema),
+    });
+
+    const user = useForm<CreateUserData>({
+        resolver: zodResolver(createUserSchema),
+    });
 
     const [form, setForm] = useState({ user: "box", account: "hidden" });
+    const [personData, setPersonData] = useState({});
+    const [error, setError] = useState('');
+    const { statesWithCities } = useContext(LocalizationContext);
 
-    const handleSubmit = (e: any) => {
-        e.preventDefault();
+    const selectedState = person.watch("state");
+
+    const createUser = async (data: CreateUserData) => {
+        console.log({ ...data, ...personData });
 
         const url = "http://localhost:3000/person";
-        const data = {
-            email,
-            username,
-            name,
-            cpf,
-            date_birth,
-            full_name,
-            password,
-            city,
-        };
-
-        fetch(url, {
+        await fetch(url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify({ ...data, ...personData }),
         })
             .then((response) => {
                 if (!response.ok) {
-                    throw new Error("Erro na solicitação");
+                    // throw new Error("Erro na solicitação");
                 }
                 return response.json();
             })
             .then((responseData) => {
-                const { id } = responseData;
-                console.log(id);
+                console.log(responseData);
+                
+                if (responseData.error && typeof responseData.message === "string") {
+                    setError(responseData.message);
+                }else{
+                    const values: any[] = Object.values(responseData.message);
+                    for (const value of values) {
+                        if(value[0]){
+                            setError(value[0]);
+                        }
+                    }
+                }
+                // const { id } = responseData;
+                // console.log(id);
             });
     };
 
-    const handleUser = async (e: any) => {
-        e.preventDefault();
+    const handleUser = (data: CreatePersonData) => {
+        setPersonData(data);
         setForm({ user: "hidden", account: "box" });
     };
 
-    return (
-        <div className="flex flex-col h-screen bg-beige-normal">
-            <nav className="bg-darkblue-normal h-20">
-                <div className="flex items-center justify-between px-16 lg:px-32 h-20">
-                    <Link href="/" className="cursor-pointer">
-                        <img
-                            src="../../logo-login.svg"
-                            alt=""
-                            className="w-[75%]"
-                        />
-                    </Link>
-                    <Link href="/login">
-                        <p className="text-lighttext-normal text-md font-semibold">
-                            Já possui conta?{" "}
-                            <span className="text-lime-normal">Entrar</span>
-                        </p>
-                    </Link>
-                </div>
-                <div className={`h-2 bg-orangee-normal ${form.user === "box" ? "w-[50%]" : ""}`}></div>
-                <a
-                    href=""
-                    className="flex items-center gap-2 px-14 lg:px-32 py-4"
+    return (<div className="relative">
+        {
+            form.user === "box" ? (
+                <Link
+                    href="/register"
+                    className="absolute flex gap-2 py-2 pr-2 mt-4 lg:ml-32 ml-14"
                 >
                     <img src="../../arrow_back.svg" alt="" />
                     <p className="text-lg font-semibold text-gray-700">
-                        Cancelar
+                        Voltar
                     </p>
-                </a>
-            </nav>
-            <main className="grow flex flex-col items-center justify-center">
-                <p className="text-2xl lg:text-3xl font-bold mb-8 mt-24">
-                    Bem-vindo a Bichos
-                </p>
-                <div className="grow flex w-full justify-center items-center justify-evenly">
-                    <form
-                        onSubmit={handleUser}
-                        className={`
+                </Link>
+            ) : (
+                <button
+                    className="absolute flex gap-2 py-2 pr-2 mt-4 lg:ml-32 ml-14"
+                    onClick={() => setForm({ user: "box", account: "hidden" })}
+                >
+                    <img src="../../arrow_back.svg" alt="" />
+                    <p className="text-lg font-semibold text-gray-700">
+                        Voltar
+                    </p>
+                </button>
+            )
+        }
+        <div className={`h-2 bg-orangee-normal ${form.user === "box" ? "w-[50%]" : ""}`}></div>
+        <main className="grow flex flex-col items-center justify-center">
+            {error && (
+                <div className="absolute top-4 right-2 px-4 py-2 border-2 rounded-lg border-red-600 bg-red-600 bg-opacity-30 flex gap-2 items-center">
+                    <span className="text-md text-red-600 font-semibold">
+                        {error}
+                    </span>
+                    <button onClick={() => setError('')}>
+                        <AiOutlineCloseCircle className="text-red-600 w-6 h-6"/>
+                    </button>
+                </div>
+            )}
+            <p className="text-2xl lg:text-3xl font-bold mb-8 mt-14">
+                Bem-vindo a Bichos
+            </p>
+            <div className="grow flex w-full justify-center items-center justify-evenly">
+                <form
+                    onSubmit={person.handleSubmit(handleUser)}
+                    className={`
                             flex flex-col px-4 py-6 bg-lighttext-normal rounded-md justify-center items-center shadow-btn border border-black
-                            w-2/6 gap-6
+                            w-2/6 gap-2
                             ${form.user}
                         `}
-                    >
-                        <h1 className="w-full text-xl font-bold">
-                            Informações
-                        </h1>
-                        <div className="min-w-full">
+                >
+                    <h1 className="w-full text-xl font-bold">Informações</h1>
+                    <div className="min-w-full">
+                        <label className="text-xs text-gray-600 font-bold">Nome completo</label>
+                        <input
+                            type="text"
+                            placeholder="Digite seu nome completo"
+                            className={`
+                                bg-lighttext-normal
+                                border-b-2 border-gray-500
+                                min-w-full h-10 p-2
+                                placeholder-gray-500
+                                text-md font-semibold
+                                resize-none
+                                focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                            `}
+                            {...person.register("full_name")}
+                        />
+                        {person.formState.errors.full_name && (
+                            <span className="text-xs text-red-600 font-semibold">
+                                {person.formState.errors.full_name.message}
+                            </span>
+                        )}
+                    </div>
+                    <div className="min-w-full">
+                        <label className="text-xs text-gray-600 font-bold">E-mail</label>
+                        <input
+                            type="email"
+                            placeholder="Digite o e-mail"
+                            className={`
+                                bg-lighttext-normal
+                                border-b-2 border-gray-500
+                                min-w-full h-10 p-2
+                                placeholder-gray-500
+                                text-md font-semibold
+                                resize-none
+                                focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                            `}
+                            {...person.register("email")}
+                        />
+                        {person.formState.errors.email && (
+                            <span className="text-xs text-red-600 font-semibold">
+                                {person.formState.errors.email.message}
+                            </span>
+                        )}
+                    </div>
+                    <div className="w-full flex gap-[4%] ">
+                        <div className="min-w-[48%]">
+                            <label className="text-xs text-gray-600 font-bold">CPF</label>
                             <input
                                 type="text"
-                                id="full_name"
-                                placeholder="Nome completo"
-                                name="full_name"
-                                value={full_name}
-                                onChange={(e) => setFullName(e.target.value)}
-                                required
+                                placeholder="000.000.000-00"
                                 className={`
-                                bg-lighttext-normal
-                                border-b-2 border-gray-500
-                                min-w-full h-12
-                                placeholder-gray-700
-                                text-md font-semibold
-                            `}
+                                    bg-lighttext-normal
+                                    border-b-2 border-gray-500
+                                    min-w-full h-10 p-2
+                                    placeholder-gray-500
+                                    text-md font-semibold
+                                    resize-none
+                                    focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                `}
+                                {...person.register("cpf")}
                             />
+                            {person.formState.errors.cpf && (
+                                <span className="text-xs text-red-600 font-semibold">
+                                    {person.formState.errors.cpf.message}
+                                </span>
+                            )}
                         </div>
-                        <div className="min-w-full">
+                        <div className="min-w-[48%]">
+                            <label className="text-xs text-gray-600 font-bold">Data de nascimento</label>
                             <input
-                                type="email"
-                                placeholder="E-mail"
-                                id="email"
-                                name="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
+                                type="date"
+                                placeholder="Data de nascimento"
                                 className={`
-                                bg-lighttext-normal
-                                border-b-2 border-gray-500
-                                min-w-full h-12
-                                placeholder-gray-700
-                                text-md font-semibold
-                            `}
+                                    bg-lighttext-normal
+                                    border-b-2 border-gray-500
+                                    min-w-full h-10 p-2
+                                    placeholder-gray-500
+                                    text-md font-semibold
+                                    resize-none
+                                    focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                `}
+                                {...person.register("date_birth")}
                             />
-                        </div>
-                        <div className="w-full flex gap-[4%] ">
-                            <div className="min-w-[48%]">
-                                <input
-                                    type="text"
-                                    id="cpf"
-                                    placeholder="CPF"
-                                    name="cpf"
-                                    value={cpf}
-                                    onChange={(e) => setCpf(e.target.value)}
-                                    required
-                                    className={`
-                                    bg-lighttext-normal
-                                    border-b-2 border-gray-500
-                                    w-full h-12
-                                    placeholder-gray-700
-                                    text-md font-semibold
-                                `}
-                                />
-                            </div>
-                            <div className="min-w-[48%]">
-                                <input
-                                    type="date"
-                                    id="date_birth"
-                                    placeholder="Data de nascimento"
-                                    name="date_birth"
-                                    value={date_birth}
-                                    onChange={(e) =>
-                                        setDateBirth(e.target.value)
+                            {person.formState.errors.date_birth && (
+                                <span className="text-xs text-red-600 font-semibold">
+                                    {
+                                        person.formState.errors.date_birth
+                                            .message
                                     }
-                                    required
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="w-full flex gap-4">
+                        <div className="flex flex-col w-full">
+                            <label className="text-xs text-gray-600 font-bold">Estado</label>
+                            <div className="relative inline-flex items-center grow">
+                                <select
+                                    defaultValue=""
                                     className={`
-                                    bg-lighttext-normal
-                                    border-b-2 border-gray-500
-                                    min-w-full h-12
-                                    text-gray-700
-                                    text-md font-semibold
-                                `}
-                                />
+                                        appearance-none
+                                        bg-lighttext-normal border-b-2 border-gray-500 placeholder-gray-500
+                                        text-md font-semibold
+                                        resize-none leading-tight
+                                        h-10 py-2 px-4 pr-8
+                                        focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                        peer grow
+                                    `}
+                                    {...person.register("state")}
+                                >
+                                    <option key="" value="" disabled>
+                                        Estado
+                                    </option>
+                                    {
+                                        statesWithCities.map((state) => (
+                                            <option key={state.state.name} value={state.state.name}>
+                                                {state.state.name}
+                                            </option>
+                                        ))
+                                    }
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 peer-focus:text-lightblue-normal">
+                                    <BsCaretDownFill className="w-4" />
+                                </div>
                             </div>
+                            {person.formState.errors.state && (
+                                <span className="text-xs text-red-600 font-semibold">
+                                    {person.formState.errors.state.message}
+                                </span>
+                            )}
                         </div>
-                        <div className="w-full flex gap-4">
-                            <select
-                                id="states"
-                                name="state"
-                                value={state}
-                                required
-                                onChange={(e) => setState(e.target.value)}
-                                className={`
-                                bg-lighttext-normal
-                                border-b-2 border-gray-500
-                                grow h-12
-                                text-gray-700
-                                text-md font-semibold
+                        <div className="flex flex-col w-full">
+                            <label className="text-xs text-gray-600 font-bold">Cidade</label>
+                            <div className="relative inline-flex items-center grow">
+                                <select
+                                    defaultValue=""
+                                    className={`
+                                        appearance-none
+                                        bg-lighttext-normal border-b-2 border-gray-500 placeholder-gray-500
+                                        text-md font-semibold
+                                        resize-none leading-tight
+                                        h-10 py-2 px-4 pr-8
+                                        focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                        peer grow
+                                    `}
+                                    {...person.register("city")}
+                                    disabled={selectedState === ''}
+                                >
+                                    <option key="" value="" disabled>Cidade</option>
+                                    {
+                                        statesWithCities.map((state) => {
+                                            if(state.state.name === selectedState){
+                                                return state.cities.map((city) => (
+                                                    <option key={city} value={city}>
+                                                        {city}
+                                                    </option>
+                                                ))
+                                            }
+                                            return null;
+                                        })
+                                    }
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 peer-focus:text-lightblue-normal">
+                                    <BsCaretDownFill className="w-4" />
+                                </div>
+                            </div>
+                            {person.formState.errors.city && (
+                                <span className="text-xs text-red-600 font-semibold">
+                                    {person.formState.errors.city.message}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="w-full">
+                        <button
+                            type="submit"
+                            className={`
+                                inline-flex w-full px-8 py-3 h-12 bg-orangee-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal
+                                text-md font-semibold text-lighttext-normal
                             `}
-                            >
-                                <option key="" value="" disabled>
-                                    Estado
-                                </option>
-                                <option key="Paraná" value="Paraná">
-                                    Paraná
-                                </option>
-                                <option key="São Paulo" value="São Paulo">
-                                    São Paulo
-                                </option>
-                            </select>
-                            <select
-                                id="cities"
-                                name="city"
-                                value={city}
-                                required
-                                onChange={(e) => setCity(e.target.value)}
-                                className={`
-                                bg-lighttext-normal
-                                border-b-2 border-gray-500
-                                grow h-12
-                                text-gray-700
-                                text-md font-semibold
-                            `}
-                            >
-                                <option key="" value="" disabled>
-                                    Cidade
-                                </option>
-                                <option key="Paranaguá" value="Paranaguá">
-                                    Paranaguá
-                                </option>
-                                <option key="Curitiba" value="Curitiba">
-                                    Curitiba
-                                </option>
-                                <option key="Matinhos" value="Matinhos">
-                                    Matinhos
-                                </option>
-                                <option key="Antônina" value="Antônina">
-                                    Antônina
-                                </option>
-                            </select>
-                        </div>
-                        <div className="w-full">
-                            <button
-                                type="submit"
-                                className={`
-                            inline-flex w-full px-8 py-3 h-12 bg-orangee-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal
-                            text-md font-semibold text-lighttext-normal
-                        `}
-                            >
-                                Continuar
-                            </button>
-                        </div>
-                    </form>
+                        >
+                            Continuar
+                        </button>
+                    </div>
+                </form>
 
-                    <form
-                        onSubmit={handleSubmit}
-                        className={`
+                <form
+                    onSubmit={user.handleSubmit(createUser)}
+                    className={`
                             flex flex-col px-4 py-3 bg-lighttext-normal rounded-md justify-center items-center shadow-btn border border-black
-                            w-min gap-6
+                            w-min gap-6 mt-6
                             ${form.account}
                         `}
-                    >
-                        <h1 className="w-full text-xl font-bold">
-                            Criar conta
-                        </h1>
-                        <div className="min-w-full">
-                            <input
-                                type="name"
-                                id="name"
-                                placeholder="Nome"
-                                name="name"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                required
-                                className={`
+                >
+                    <h1 className="w-full text-xl font-bold">Criar conta</h1>
+                    <div className="min-w-full">
+                        <label className="text-xs text-gray-600 font-bold">Nickname</label>
+                        <input
+                            type="text"
+                            placeholder="Nome"
+                            className={`
                                 bg-lighttext-normal
                                 border-b-2 border-gray-500
-                                min-w-full h-12
-                                placeholder-gray-700
+                                min-w-full h-10 p-2
+                                placeholder-gray-500
                                 text-md font-semibold
+                                resize-none
+                                focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
                             `}
-                            />
-                        </div>
-                        <div className="min-w-full">
-                            <input
-                                type="text"
-                                placeholder="Nome de usuário"
-                                id="username"
-                                name="username"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                required
-                                className={`
-                                bg-lighttext-normal
-                                border-b-2 border-gray-500
-                                min-w-full h-12
-                                placeholder-gray-700
-                                text-md font-semibold
-                            `}
-                            />
-                        </div>
-                        <div className="w-full flex gap-4">
-                            <div className="">
-                                <input
-                                    type="password"
-                                    id="password"
-                                    placeholder="Senha"
-                                    name="password"
-                                    value={password}
-                                    onChange={(e) =>
-                                        setPassword(e.target.value)
-                                    }
-                                    required
-                                    className={`
-                                    bg-lighttext-normal
-                                    border-b-2 border-gray-500
-                                    grow h-12
-                                    placeholder-gray-700
-                                    text-md font-semibold
-                                `}
-                                />
-                            </div>
-
-                            <div className="">
-                                <input
-                                    type="password"
-                                    id="passwordConfirm"
-                                    placeholder="Confirme a senha"
-                                    name="passwordConfirm"
-                                    value={passwordConfirm}
-                                    onChange={(e) =>
-                                        setPasswordConfirm(e.target.value)
-                                    }
-                                    required
-                                    className={`
-                                    bg-lighttext-normal
-                                    border-b-2 border-gray-500
-                                    grow h-12
-                                    placeholder-gray-700
-                                    text-md font-semibold
-                                `}
-                                />
-                            </div>
-                        </div>
-                        <div className="w-full">
-                            <button
-                                type="submit"
-                                className={`
-                            inline-flex w-full px-8 py-3 h-12 bg-orangee-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal
-                            text-md font-semibold text-lighttext-normal
-                        `}
-                            >
-                                Criar conta
-                            </button>
-                        </div>
-
-                        
-                    </form>
-                    <div className='flex items-center sm:w-[75%] md:w-[30%] h-full'>
-                        <img src="../../doggie.svg" alt=""  />
+                            {...user.register("name")}
+                        />
+                        {user.formState.errors.name && (
+                            <span className="text-xs text-red-600 font-semibold">
+                                {user.formState.errors.name.message}
+                            </span>
+                        )}
                     </div>
+                    <div className="min-w-full">
+                        <label className="text-xs text-gray-600 font-bold">Username</label>
+                        <input
+                            type="text"
+                            placeholder="Nome de usuário"
+                            className={`
+                                bg-lighttext-normal
+                                border-b-2 border-gray-500
+                                min-w-full h-10 p-2
+                                placeholder-gray-500
+                                text-md font-semibold
+                                resize-none
+                                focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                            `}
+                            {...user.register("username")}
+                        />
+                        {user.formState.errors.username && (
+                            <span className="text-xs text-red-600 font-semibold">
+                                {user.formState.errors.username.message}
+                            </span>
+                        )}
+                    </div>
+                    <div className="w-full flex gap-4">
+                        <div className="">
+                            <label className="text-xs text-gray-600 font-bold">Senha</label>
+                            <input
+                                type="password"
+                                placeholder="Senha"
+                                className={`
+                                    bg-lighttext-normal
+                                    border-b-2 border-gray-500
+                                    min-w-full h-10 p-2
+                                    placeholder-gray-500
+                                    text-md font-semibold
+                                    resize-none
+                                    focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                `}
+                                {...user.register("password")}
+                            />
+                            {user.formState.errors.password && (
+                                <span className="text-xs text-red-600 font-semibold">
+                                    {user.formState.errors.password.message}
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="">
+                            <label className="text-xs text-gray-600 font-bold">Confirmar senha</label>
+                            <input
+                                type="password"
+                                placeholder="Confirme a senha"
+                                className={`
+                                    bg-lighttext-normal
+                                    border-b-2 border-gray-500
+                                    min-w-full h-10 p-2
+                                    placeholder-gray-500
+                                    text-md font-semibold
+                                    resize-none
+                                    focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                `}
+                                {...user.register("passwordConfirm")}
+                            />
+                            {user.formState.errors.passwordConfirm && (
+                                <span className="text-xs text-red-600 font-semibold">
+                                    {
+                                        user.formState.errors.passwordConfirm
+                                            .message
+                                    }
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="w-full">
+                        <button
+                            type="submit"
+                            className={`
+                                inline-flex w-full px-8 py-3 h-12 bg-orangee-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal
+                                text-md font-semibold text-lighttext-normal disabled:shadow-btn-disable disabled:bg-orange-400
+                            `}
+                            disabled={user.formState.isSubmitting}
+                        >
+                            {user.formState.isSubmitting ? "Criando...": 'Criar conta'}
+                        </button>
+                    </div>
+                </form>
+                <div className="flex items-center sm:w-[75%] md:w-[30%] h-full">
+                    <img src="../../doggie.svg" alt="" />
                 </div>
-            </main>
-        </div>
-    );
+            </div>
+        </main>
+    </div>);
 }

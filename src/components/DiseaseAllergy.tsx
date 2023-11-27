@@ -5,15 +5,12 @@ import { AiOutlineCloseCircle, AiOutlinePlus } from "react-icons/ai";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod"
+import { DiseaseAllergy } from "@/app/adopt/form/post/page";
+
+
 
 interface DiseaseAllergyProps {
-    name: string;
-    description: string;
-    type: string;
-}
-
-interface DiseaseAllergy {
-    diseaseAllergy: DiseaseAllergyProps[];
+    diseaseAllergy: DiseaseAllergy[];
     setDiseaseAllergy: any;
 }
 
@@ -25,15 +22,12 @@ const createDiseaseAllergyFormSchema = z.object({
 
 type CreateDiseaseAllergyFormData = z.infer<typeof createDiseaseAllergyFormSchema>;
 
-const DiseaseAllergy = ({diseaseAllergy, setDiseaseAllergy }: DiseaseAllergy) => {
+const DiseaseAllergy = ({diseaseAllergy, setDiseaseAllergy }: DiseaseAllergyProps) => {
 
-    const { 
-        register, 
-        handleSubmit,
-        formState: { errors },
-        reset
-    } = useForm<CreateDiseaseAllergyFormData>({
-        resolver: zodResolver(createDiseaseAllergyFormSchema)
+    const [modalFormData, setModalFormData] = useState<DiseaseAllergy>({
+        name: '',
+        description: '',
+        type: '',
     });
 
     const [isModalOpenDiseaseAllergy, setIsModalOpenDiseaseAllergy] = useState(false);
@@ -48,15 +42,29 @@ const DiseaseAllergy = ({diseaseAllergy, setDiseaseAllergy }: DiseaseAllergy) =>
         setIsModalOpenDiseaseAllergy(true);
     };
 
-    const handleModalDiseaseAllergyConfirm = (data: DiseaseAllergyProps) => {
-        setDiseaseAllergy([...diseaseAllergy, data]);
+    const handleModalDiseaseAllergyConfirm = () => {
+        if (!modalFormData.name || !modalFormData.description || !modalFormData.type) {
+            
+            return;
+        }
+
+        setDiseaseAllergy([...diseaseAllergy, modalFormData]);
         setIsModalOpenDiseaseAllergy(false);
-        reset();
+        
+        setModalFormData({
+            name: '',
+            description: '',
+            type: '',
+        });
     };
 
     const handleModalDiseaseAllergyCancel = () => {
         setIsModalOpenDiseaseAllergy(false);
-        reset();
+        setModalFormData({
+            name: '',
+            description: '',
+            type: '',
+        });
     };
 
     return (
@@ -71,7 +79,7 @@ const DiseaseAllergy = ({diseaseAllergy, setDiseaseAllergy }: DiseaseAllergy) =>
                             <div className="flex gap-2">
                                 <div className="flex justify-center bg-darkblue-normal w-[75px] rounded">
                                     <span className="text-white">
-                                        {value.type === 'doença' ? 'Doença' : 'Alergia'}
+                                        {value.type === '0' ? 'Doença' : 'Alergia'}
                                     </span>
                                 </div>
                                 <button
@@ -115,7 +123,8 @@ const DiseaseAllergy = ({diseaseAllergy, setDiseaseAllergy }: DiseaseAllergy) =>
                                     focus:outline-none focus:ring-2 focus:border-lightblue-normal focus:ring-lightblue-normal
                                     placeholder:text-sm lg:placeholder:text-base
                                 `}
-                                {...register("name")}
+                                value={modalFormData.name}
+                                onChange={e => setModalFormData({ ...modalFormData, name: e.target.value })}
                             />
 
                             <select
@@ -124,21 +133,27 @@ const DiseaseAllergy = ({diseaseAllergy, setDiseaseAllergy }: DiseaseAllergy) =>
                                     focus:outline-none focus:ring-2 focus:border-lightblue-normal focus:ring-lightblue-normal
                                     text-sm lg:text-base text-gray-500
                                 `}
-                                defaultValue=""
-                                {...register('type')}
+                                value={modalFormData.type}
+                                onChange={(e) => {
+                                    const selectedType = e.target.value;
+                                    setModalFormData((prevFormData) => ({
+                                        ...prevFormData,
+                                        type: selectedType,
+                                    }));
+                                }}
                             >
                                 <option value="" disabled>doença/alergia</option>
-                                <option value="doença">doença</option>
-                                <option value="alergia">alergia</option>
+                                <option value="0">doença</option>
+                                <option value="1">alergia</option>
                             </select>
                         </div>
                         <div className="flex gap-2 mb-4 justify-between">
-                            <div>
-                                { errors.name && <span className="text-sm text-red-600">{errors.name.message}</span> }
+                            {/* <div>
+                                { modalErrors.name && <span className="text-sm text-red-600">{modalErrors.name.message}</span> }
                             </div>
                             <div>
-                                { errors.type && <span className="text-sm text-red-600">{errors.type.message}</span> }
-                            </div>
+                                { modalErrors.type && <span className="text-sm text-red-600">{modalErrors.type.message}</span> }
+                            </div> */}
                         </div>
                         <textarea
                             placeholder="Descrição sobre doença e como está sendo tratada atualmente."
@@ -148,9 +163,10 @@ const DiseaseAllergy = ({diseaseAllergy, setDiseaseAllergy }: DiseaseAllergy) =>
                                 focus:outline-none focus:ring-2 focus:border-lightblue-normal focus:ring-lightblue-normal
                                 text-sm lg:text-base placeholder:text-sm lg:placeholder:text-base
                             `}
-                            {...register("description")}
+                            value={modalFormData.description}
+                            onChange={e => setModalFormData({ ...modalFormData, description: e.target.value })}
                         ></textarea>
-                        { errors.description && <span className="text-sm text-red-600 mt-1">{errors.description.message}</span> }
+                        {/* { modalErrors.description && <span className="text-sm text-red-600 mt-1">{modalErrors.description.message}</span> } */}
 
                         <div className="flex justify-end gap-4">
                             <button
@@ -163,7 +179,7 @@ const DiseaseAllergy = ({diseaseAllergy, setDiseaseAllergy }: DiseaseAllergy) =>
                             <button
                                 type="button"
                                 className="text-darkblue-normal font-semibold pt-4"
-                                onClick={handleSubmit(handleModalDiseaseAllergyConfirm)}
+                                onClick={handleModalDiseaseAllergyConfirm}
                             >
                                 Confirmar
                             </button>

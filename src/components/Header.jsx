@@ -25,7 +25,10 @@ const Header = () => {
                     </h1>
                     <Link
                         href="/about"
-                        className="inline-flex max-w-max px-8 py-3 h-12 bg-lime-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal"
+                        className={`
+                            inline-flex max-w-max px-8 py-3 h-12 bg-lime-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal 
+                            hover:bg-lime-hover active:bg-lime-light_active active:shadow-btn-disable
+                        `}
                     >
                         <span className="text-xl font-semibold text-darktext-normal shadow-sm">
                             Sobre nós

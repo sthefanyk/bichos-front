@@ -25,9 +25,13 @@ const config: Config = {
         },
         lime: {
           normal: '#cec22e',
+          hover: '#b9af29',
+          light_active: '#f0ecbe'
         },
         darkblue: {
           normal: '#115151',
+          hover: '#0f4949',
+          light_active: '#b5c9c9'
         },
         lightblue: {
           normal: '#40a4a6',
@@ -41,6 +45,7 @@ const config: Config = {
       },
       boxShadow: {
         'btn': '4px 4px #000',
+        'btn-disable': '-4px -4px #000',
         'btn-orange': '4px 4px #e05d27',
         'card': '4px 4px #CEC22E',
       },

@@ -3,6 +3,10 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { LocalizationProvider } from '@/contexts/LocalizationContext'
+import { BreedProvider } from '@/contexts/BreedContext'
+import { PersonalityProvider } from '@/contexts/PersonalityContext'
+import { PostProvider } from '@/contexts/PostContext'
 
 export const metadata: Metadata = {
   title: 'Bichos',
@@ -20,12 +24,20 @@ export default function RootLayout({
     <html lang="pt-br">
       <body className="overlay-x-hidden font-jakarta">
         <AuthProvider>
-          <>
-            <Navbar />
-            {children}
-          </>
+          <LocalizationProvider>
+            <BreedProvider>
+              <PersonalityProvider>
+                <PostProvider>
+                  <>
+                    <Navbar />
+                    {children}
+                    {/* <Footer /> */}
+                  </>
+                </PostProvider>
+              </PersonalityProvider>
+            </BreedProvider>
+          </LocalizationProvider>
         </AuthProvider>
-        {/* <Footer /> */}
       </body>
     </html>
   )

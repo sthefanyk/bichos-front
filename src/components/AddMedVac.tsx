@@ -9,17 +9,18 @@ interface DosesProps {
 }
 
 interface MedVacProps {
-    name: string;
     doses: DosesProps[];
+    name: string;
 }
 
 interface AddMedVac {
     medOrVac: string;
     medVac: MedVacProps[];
     setMedVac: any;
+    setErrorHealth: any;
 }
 
-const AddMedVac = ({ medOrVac, medVac, setMedVac }: AddMedVac) => {
+const AddMedVac = ({ medOrVac, medVac, setMedVac, setErrorHealth }: AddMedVac) => {
     const [isModalOpenMedVac, setIsModalOpenMedVac] = useState(false);
     const [isModalOpenDose, setIsModalOpenDose] = useState(false);
     const [isTomada, setIsTomada ] = useState(false);
@@ -68,6 +69,7 @@ const AddMedVac = ({ medOrVac, medVac, setMedVac }: AddMedVac) => {
         setIsTomada(false);
         setError(false);
 
+        setErrorHealth(false);
         setIsModalOpenDose(true);
     };
 
@@ -75,7 +77,7 @@ const AddMedVac = ({ medOrVac, medVac, setMedVac }: AddMedVac) => {
         if (newDose.date) {
             medVac[newDose.index].doses.push({
                 date: newDose.date,
-                tomado: isTomada,
+                tomado: isTomada
             });
 
             setIsModalOpenDose(false);

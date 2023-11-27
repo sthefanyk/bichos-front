@@ -1,6 +1,6 @@
 "use client"
-import { type } from 'os';
-import { useState } from 'react';
+import { PersonalityContext } from '@/contexts/PersonalityContext';
+import { useContext, useState } from 'react';
 import { AiOutlineCloseCircle, AiOutlinePlus } from 'react-icons/ai';
 
 type PersonalitiesProps = {
@@ -9,9 +9,9 @@ type PersonalitiesProps = {
 }
 
 const AddPersonality = ({personalities, setPersonalities }: PersonalitiesProps) => {
-    // const [selectedOption, setSelectedOption] = useState(['bricalhão', 'dorminhoco']);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPersonality, setNewPersonality] = useState('');
+    const { personalitiesData } = useContext(PersonalityContext);
 
     const handleRemovePersonality = (index: number) => {
       const updatedOptions = [...personalities];
@@ -24,9 +24,18 @@ const AddPersonality = ({personalities, setPersonalities }: PersonalitiesProps) 
     };
   
     const handleModalConfirm = () => {
-      if (newPersonality) {
+      let exits = false;
+      
+      personalities.forEach(p => {
+        if(newPersonality === p) {
+          exits = true;
+        }
+      })
+      
+      if (!exits) {
         setPersonalities([...personalities, newPersonality]);
       }
+
       setIsModalOpen(false);
       setNewPersonality('');
     };
@@ -59,18 +68,29 @@ const AddPersonality = ({personalities, setPersonalities }: PersonalitiesProps) 
         <div className="fixed inset-0 flex items-center justify-center z-10 bg-black bg-opacity-50">
           <div className="bg-white p-4 rounded shadow-md w-1/2 lg:w-1/4">
             <h2 className="text-lg mb-4 font-semibold">Adicionar personalidade</h2>
-            <input
-              type="text"
-              placeholder="Nova personalidade"
-              value={newPersonality}
-              onChange={(e) => setNewPersonality(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-sm mb-4"
-            />
+            <select
+                className={`
+                  w-full p-2 border border-gray-300 rounded-sm mb-4
+                `}
+                defaultValue={newPersonality}
+                onChange={(e) => setNewPersonality(e.target.value)}
+            >
+                <option key="" value="" disabled>
+                    Personalidade
+                </option>
+                {
+                    personalitiesData.map((personality) => (
+                        <option key={personality.id} value={personality.name}>
+                            {personality.name}
+                        </option>
+                    ))
+                }
+            </select>
             <div className="flex justify-end gap-4">
-              <button className="text-gray-600 font-semibold" onClick={handleModalCancel}>
+              <button type="button" className="text-gray-600 font-semibold" onClick={handleModalCancel}>
                 Cancelar
               </button>
-              <button className="text-darkblue-normal font-semibold" onClick={handleModalConfirm}>
+              <button type="button" className="text-darkblue-normal font-semibold" onClick={handleModalConfirm}>
                 Confirmar
               </button>
             </div>

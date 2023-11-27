@@ -3,14 +3,17 @@ import AddMedVac from "@/components/AddMedVac";
 import DiseaseAllergy from "@/components/DiseaseAllergy";
 import AddPersonality from "@/components/AddPersonality";
 import CheckBox from "@/components/CheckBox";
-import InputPhotos from "@/components/InputPhotos";
+import InputPhotos, { Image } from "@/components/InputPhotos";
 
 import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useState, useRef, useContext } from "react";
 
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod"
+import { BreedContext } from "@/contexts/BreedContext";
+import { AuthContext } from "@/contexts/AuthContext";
+import { InputPost } from "@/app/adopt/form/post/page";
 
 const createPostFormSchema = z.object({
     name_animal: z.string().min(1, 'Por favor, insira o nome do bicho.'),
@@ -47,8 +50,8 @@ interface DosesProps {
 }
 
 interface MedVacProps {
-    name: string;
     doses: DosesProps[];
+    name: string;
 }
 
 interface DiseaseAllergyProps {
@@ -57,13 +60,16 @@ interface DiseaseAllergyProps {
     type: string;
 }
 
-const FormAdopt = () => {
+interface FormAdoptProps {
+    post: (data: InputPost) => any;
+}
 
+const FormAdopt = ({ post }: FormAdoptProps) => {
     const { 
         register, 
         handleSubmit, 
         watch,
-        formState: { errors },
+        formState: { errors, isSubmitting },
         reset
     } = useForm<CreatePostFormData>({
         resolver: zodResolver(createPostFormSchema)
@@ -77,26 +83,19 @@ const FormAdopt = () => {
     const [personalities, setPersonalities ] = useState(['brincalhão', 'dorminhoco']);
     const [isCastrado, setIsCastrado ] = useState(false);
     const [isUrgent, setIsUrgent ] = useState(false);
+    const { breeds } = useContext(BreedContext);
+    const { user, isAuthenticated } = useContext(AuthContext);
 
     const [agreeStorageData, setAgreeStorageData ] = useState(false);
     const [agreeUseTerms, setAgreeUseTerms ] = useState(false);
 
     const [error, setError ] = useState(false);
+    const [errorHealth, setErrorHealth ] = useState(false);
 
     const [medicamentos, setMedicamentos] = useState<MedVacProps[]>([]);
     const [vacinas, setVacinas] = useState<MedVacProps[]>([]);
-    const [diseaseAllergy, setDiseaseAllergy] = useState<DiseaseAllergyProps[]>([
-        // {
-        //     name: "Nome da doença",
-        //     description: 'Descrição sobre doença e como está sendo tratada atualmente.',
-        //     type: 1
-        // },
-        // {
-        //     name: "Nome da alergia",
-        //     description: 'Descrição sobre alergia e como está sendo tratada atualmente.',
-        //     type: 2
-        // },
-    ]);
+    const [diseaseAllergy, setDiseaseAllergy] = useState<DiseaseAllergyProps[]>([]);
+    const [photos, setPhotos] = useState<Image[]>([]);
 
     const section = useRef<HTMLElement | null>(null);
     const scrollToSection = () => {
@@ -108,6 +107,60 @@ const FormAdopt = () => {
     const { push } = useRouter();
 
     const createPost = (data: CreatePostFormData) => {
+
+        let noDose = false;
+        
+        const vaccines_medicines: {
+            name: string;
+            type: number;
+            doses: {
+              number_dose: number;
+              application_date: string;
+              applied: boolean;
+            }[];
+            total_dose: number;
+        }[] = [];
+
+        vacinas.forEach(v => {
+            if (v.doses.length === 0) noDose = true;
+            vaccines_medicines.push({
+                name: v.name,
+                type: 1,
+                doses: v.doses.map((d, i) => {
+                    return {
+                        number_dose: i + 1,
+                        application_date: d.date,
+                        applied: d.tomado
+                    }
+                }),
+                total_dose: v.doses.length
+            })
+        })
+
+
+        medicamentos.forEach(m => {
+            if (m.doses.length === 0) noDose = true;
+            vaccines_medicines.push({
+                name: m.name,
+                type: 1,
+                doses: m.doses.map((d, i) => {
+                    return {
+                        number_dose: i + 1,
+                        application_date: d.date,
+                        applied: d.tomado
+                    }
+                }),
+                total_dose: m.doses.length
+            })
+        })
+
+        if (noDose) {
+            setError(true);
+            setErrorHealth(true);
+            section.current = document.getElementById('health');
+            scrollToSection();
+            return
+        }
         
         if (personalities.length === 0) {
             section.current = document.getElementById('personalitySection');
@@ -122,6 +175,13 @@ const FormAdopt = () => {
             return
         }
 
+        if (!photos[0] || !photos[1] || !photos[2] || !photos[3]) {
+            setError(true);
+            section.current = document.getElementById('photos');
+            scrollToSection();
+            return
+        }
+
         if (!agreeUseTerms && !agreeStorageData) {
             setError(true);
             section.current = document.getElementById('termsSection');
@@ -129,18 +189,81 @@ const FormAdopt = () => {
             return
         }
 
-        reset();
-        setError(false);
+        
+
+        const dados: InputPost = {
+            urgent: isUrgent,
+            urgency_justification: data.motivo,
+            posted_by: user?.id ?? "",
+
+            size_current: data.porte_atual ? +data.porte_atual : 0,
+            size_estimated: data.porte_estimado ? +data.porte_estimado : 0,
+            breed: data.raca,
+            name: data.name_animal,
+            sex: +data.sex,
+            date_birth: data.birth_date,
+            specie: data.type ? +data.type : 0,
+            characteristic: data.caracteristica,
+            history: data.history,
+            personalities: personalities,
+            
+            main_image: photos[0].id,
+            second_image: photos[1].id,
+            third_image: photos[2].id,
+            fourth_image: photos[3].id,
+
+            health: {
+                neutered: isCastrado,
+                vaccines_medicines: vaccines_medicines,                
+                disease_allergy: diseaseAllergy,
+                additional: data.infoAdicional ?? "",
+            },
+            
+            contact: {
+                name: data.name,
+                email: data.email,
+                phone: data.phone,
+                city: data.city,
+            }
+        };
+        
         // modal de confirmação
-        // chama api
-        console.log({...data, isCastrado, personalities, medicamentos, vacinas, diseaseAllergy, isUrgent, agreeStorageData, agreeUseTerms });
-
-
-        push("/");
+        
+        setErrorHealth(false);
+        setError(false);
+        if(!isAuthenticated) push("/login");
+        handlePost(dados);
     }
 
+    async function handlePost(data: InputPost) {
+        const response = await post(data);
+	
+		console.log(response);
+	
+		if (response.error && typeof response.message === "string") {
+			// setErrorSignIn(response.message);
+		} else if (response.error) {
+			const values: any[] = Object.values(response.message);
+			for (const value of values) {
+				if (value[0]) {
+					// setErrorSignIn(value[0]);
+				}
+			}
+		} else {
+			// const token: string = response.accessToken;
+			// setCookie(undefined, "bichos.token", token, {
+			// 	maxAge: 60 * 60 * 1,
+			// });
+	
+			// Atualize o estado de errorSignIn antes de usar push
+			// setErrorSignIn("");
+	
+            // reset();
+			push("/");
+		}
+	}
+
     return (
-    <>
         <form action="" onSubmit={handleSubmit(createPost)} className="flex flex-col lg:flex-row justify-between w-4/5 gap-8" >
             <div className="flex flex-col gap-8 w-full">
                 <section className={`
@@ -154,30 +277,30 @@ const FormAdopt = () => {
                         <div className="flex gap-2">
                             <label className={`
                                 border border-black rounded-md p-2 h-10 w-10 cursor-pointer
-                                ${selectedType === "dog" ? "bg-lime-normal" : ""}
+                                ${selectedType === "0" ? "bg-lime-normal" : ""}
                             `}>
                                 <input
                                     {...register("type")}
                                     type="radio"
-                                    value="dog"
+                                    value="0"
                                     className="sr-only"
                                 />
                                 C
                             </label>
                             <label className={`
                                 border border-black rounded-md p-2 h-10 w-10 cursor-pointer
-                                ${selectedType === "cat" ? "bg-lime-normal" : ""}
+                                ${selectedType === "1" ? "bg-lime-normal" : ""}
                             `}>
                                 <input
                                     {...register("type")}
                                     type="radio"
-                                    value="cat"
+                                    value="1"
                                     className="sr-only"
                                 />
                                 G
                             </label>
                         </div>
-                        { errors.type && <span className="text-sm text-red-600">{errors.type.message}</span> }
+                        { errors.type && <span className="text-xs text-red-600 font-semibold">{errors.type.message}</span> }
                     </div>
                     <div className="flex flex-col gap-2">
                         <p className="text-md font-semibold">Nome: </p>
@@ -190,7 +313,7 @@ const FormAdopt = () => {
                             `}
                             {...register('name_animal')}
                         />
-                        { errors.name_animal && <span className="text-sm text-red-600">{errors.name_animal.message}</span> }
+                        { errors.name_animal && <span className="text-xs text-red-600 font-semibold">{errors.name_animal.message}</span> }
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -205,10 +328,10 @@ const FormAdopt = () => {
                             {...register('sex')}
                         >
                             <option value="" disabled>Sexo do bicho</option>
-                            <option value="F">Femea</option>
-                            <option value="M">Macho</option>
+                            <option value="1">Femea</option>
+                            <option value="0">Macho</option>
                         </select>
-                        { errors.sex && <span className="text-sm text-red-600">{errors.sex.message}</span> }
+                        { errors.sex && <span className="text-xs text-red-600 font-semibold">{errors.sex.message}</span> }
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -222,11 +345,18 @@ const FormAdopt = () => {
                             defaultValue=""
                             {...register('raca')}
                         >
-                            <option value="" disabled>Raça do bicho</option>
-                            <option value="Vira-Lata">Vira-Lata</option>
-                            <option value="York Shire">York Shire</option>
+                            <option key="" value="" disabled>
+                                Raça do bicho
+                            </option>
+                            {
+                                breeds.map((breed) => (
+                                    <option key={breed.id} value={breed.name}>
+                                        {breed.name}
+                                    </option>
+                                ))
+                            }
                         </select>
-                        { errors.raca && <span className="text-sm text-red-600">{errors.raca.message}</span> }
+                        { errors.raca && <span className="text-xs text-red-600 font-semibold">{errors.raca.message}</span> }
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -240,7 +370,7 @@ const FormAdopt = () => {
                             `} 
                             {...register('birth_date')}
                         />
-                        { errors.birth_date && <span className="text-sm text-red-600">{errors.birth_date.message}</span> }
+                        { errors.birth_date && <span className="text-xs text-red-600 font-semibold">{errors.birth_date.message}</span> }
                     </div>
 
                     <div className="flex justify-between">
@@ -249,84 +379,84 @@ const FormAdopt = () => {
                             <div className="flex gap-2">
                                 <label className={`
                                     border border-black rounded-md p-2 h-10 w-10 cursor-pointer
-                                    ${selectedPorteAtual === "small" ? "bg-lime-normal" : ""}
+                                    ${selectedPorteAtual === "0" ? "bg-lime-normal" : ""}
                                 `}>
                                     <input
                                         {...register("porte_atual")}
                                         type="radio"
-                                        value="small"
+                                        value="0"
                                         className="sr-only"
                                     />
                                     P
                                 </label>
                                 <label className={`
                                     border border-black rounded-md p-2 h-10 w-10 cursor-pointer
-                                    ${selectedPorteAtual === "medium" ? "bg-lime-normal" : ""}
+                                    ${selectedPorteAtual === "1" ? "bg-lime-normal" : ""}
                                 `}>
                                     <input
                                         {...register("porte_atual")}
                                         type="radio"
-                                        value="medium"
+                                        value="1"
                                         className="sr-only"
                                     />
                                     M
                                 </label>
                                 <label className={`
                                     border border-black rounded-md p-2 h-10 w-10 cursor-pointer
-                                    ${selectedPorteAtual === "large" ? "bg-lime-normal" : ""}
+                                    ${selectedPorteAtual === "2" ? "bg-lime-normal" : ""}
                                 `}>
                                     <input
                                         {...register("porte_atual")}
                                         type="radio"
-                                        value="large"
+                                        value="2"
                                         className="sr-only"
                                     />
                                     G
                                 </label>
                             </div>
-                            { errors.porte_atual && <span className="text-sm text-red-600">{errors.porte_atual.message}</span> }
+                            { errors.porte_atual && <span className="text-xs text-red-600 font-semibold">{errors.porte_atual.message}</span> }
                         </div>
                         <div className="flex flex-col gap-2">
                             <p className="text-md font-semibold">Porte estimado: </p>
                             <div className="flex gap-2">
                                 <label className={`
                                     border border-black rounded-md p-2 h-10 w-10 cursor-pointer
-                                    ${selectedPorteEstimado === "small" ? "bg-lime-normal" : ""}
+                                    ${selectedPorteEstimado === "0" ? "bg-lime-normal" : ""}
                                 `}>
                                     <input
                                         {...register("porte_estimado")}
                                         type="radio"
-                                        value="small"
+                                        value="0"
                                         className="sr-only"
                                     />
                                     P
                                 </label>
                                 <label className={`
                                     border border-black rounded-md p-2 h-10 w-10 cursor-pointer
-                                    ${selectedPorteEstimado === "medium" ? "bg-lime-normal" : ""}
+                                    ${selectedPorteEstimado === "1" ? "bg-lime-normal" : ""}
                                 `}>
                                     <input
                                         {...register("porte_estimado")}
                                         type="radio"
-                                        value="medium"
+                                        value="1"
                                         className="sr-only"
                                     />
                                     M
                                 </label>
                                 <label className={`
                                     border border-black rounded-md p-2 h-10 w-10 cursor-pointer
-                                    ${selectedPorteEstimado === "large" ? "bg-lime-normal" : ""}
+                                    ${selectedPorteEstimado === "2" ? "bg-lime-normal" : ""}
                                 `}>
                                     <input
                                         {...register("porte_estimado")}
                                         type="radio"
-                                        value="large"
+                                        value="2"
                                         className="sr-only"
                                     />
                                     G
                                 </label>
                             </div>
-                            { errors.porte_estimado && <span className="text-sm text-red-600">{errors.porte_estimado.message}</span> }
+                            { errors.porte_estimado && <span className="text-xs text-red-600 font-semibold">{errors.porte_estimado.message}</span> }
                         </div>
                     </div>
                 </section>
@@ -348,7 +478,7 @@ const FormAdopt = () => {
                             `}
                             {...register("history")}
                         ></textarea>
-                        { errors.history && <span className="text-sm text-red-600">{errors.history.message}</span> }
+                        { errors.history && <span className="text-xs text-red-600 font-semibold">{errors.history.message}</span> }
                     </div>
                     <div className="flex flex-col gap-2">
                         <p className="text-md font-semibold">Características</p>
@@ -361,7 +491,7 @@ const FormAdopt = () => {
                             `}
                             {...register("caracteristica")}
                         ></textarea>
-                        { errors.caracteristica && <span className="text-sm text-red-600">{errors.caracteristica.message}</span> }
+                        { errors.caracteristica && <span className="text-xs text-red-600 font-semibold">{errors.caracteristica.message}</span> }
                     </div>
                     <div id="personalitySection" className="flex flex-col gap-2">
                         <p className="text-md font-semibold">Personalidade</p>
@@ -369,7 +499,7 @@ const FormAdopt = () => {
                     </div>
                 </section>
 
-                <section className={`
+                <section id="photos" className={`
                     flex flex-col gap-6
                     p-4 
                     bg-white border border-black rounded-xl 
@@ -377,26 +507,37 @@ const FormAdopt = () => {
                     <h2 className="text-xl font-semibold">Fotos do bicho</h2>
                     <div className="flex flex-col gap-2">
                         <p className="text-md font-semibold text-gray-700">Carregue a imagem ou arraste e solte aqui</p>
-                        <InputPhotos />
+                    { error && (!photos[0] || !photos[1] || !photos[2] || !photos[3]) && 
+                        <span className="text-xs text-red-600 font-semibold">É necessário adicionar quatro fotos do bicho.</span> 
+                    }
+                        <InputPhotos photos={photos} setPhotos={setPhotos}/>
                     </div>
                 </section>
             </div>
             <div className="flex flex-col gap-8 w-full">
-                <section className={`
-                    flex flex-col gap-6
-                    p-4
-                    bg-white border border-black rounded-xl 
-                `}>
+                <section 
+                    id="health"
+                    className={`
+                        flex flex-col gap-6
+                        p-4
+                        bg-white border border-black rounded-xl 
+                    `}>
                     <h2 className="text-xl font-semibold">Saúde do bicho</h2>
                     <CheckBox id="castrado" label="Castrado(a)" isChecked={isCastrado} setIsChecked={setIsCastrado} />
                     <div className="flex flex-col gap-2">
                         <p className="text-md font-semibold">Medicamentos</p>
-                        <AddMedVac medOrVac="Medicamento" medVac={medicamentos} setMedVac={setMedicamentos} />
+                        <AddMedVac medOrVac="Medicamento" medVac={medicamentos} setMedVac={setMedicamentos} setErrorHealth={setErrorHealth} />
+                        { error && errorHealth && 
+                            <span className="text-xs text-red-600 font-semibold">É necessário adicionar ao menos uma dose.</span> 
+                        }
                     </div>
 
                     <div className="flex flex-col gap-2">
                         <p className="text-md font-semibold">Vacinas</p>
-                        <AddMedVac medOrVac="Vacina" medVac={vacinas} setMedVac={setVacinas} />
+                        <AddMedVac medOrVac="Vacina" medVac={vacinas} setMedVac={setVacinas} setErrorHealth={setErrorHealth} />
+                        { error && errorHealth && 
+                            <span className="text-xs text-red-600 font-semibold">É necessário adicionar ao menos uma dose.</span> 
+                        }
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -415,7 +556,7 @@ const FormAdopt = () => {
                             `}
                             {...register("infoAdicional")}
                         ></textarea>
-                        { errors.infoAdicional && <span className="text-sm text-red-600">{errors.infoAdicional.message}</span> }
+                        { errors.infoAdicional && <span className="text-xs text-red-600 font-semibold">{errors.infoAdicional.message}</span> }
                     </div>
                 </section>
 
@@ -437,7 +578,7 @@ const FormAdopt = () => {
                             `}
                             {...register("motivo")}
                         ></textarea>
-                        { error && isUrgent && !motivo && <span className="text-sm text-red-600">Por favor, insira o motivo da urgência.</span> }
+                        { error && isUrgent && !motivo && <span className="text-xs text-red-600 font-semibold">Por favor, insira o motivo da urgência.</span> }
                     </div>                           
                 </section>
 
@@ -458,7 +599,7 @@ const FormAdopt = () => {
                             `}
                             {...register('name')}
                         />
-                        { errors.name && <span className="text-sm text-red-600">{errors.name.message}</span> }
+                        { errors.name && <span className="text-xs text-red-600 font-semibold">{errors.name.message}</span> }
                     </div>
                     <div className="flex flex-col gap-2">
                         <p className="text-md font-semibold">E-mail: </p>
@@ -471,13 +612,13 @@ const FormAdopt = () => {
                             `}
                             {...register('email')}
                         />
-                        { errors.email && <span className="text-sm text-red-600">{errors.email.message}</span> }
+                        { errors.email && <span className="text-xs text-red-600 font-semibold">{errors.email.message}</span> }
                     </div>
                     <div className="flex flex-col gap-2">
                         <p className="text-md font-semibold">Telefone (WhatsApp): </p>
                         <input 
                             type="text" 
-                            placeholder="(XX) XXXXX-XXXX" 
+                            placeholder="(XX) XXXXX-XXXX"
                             className={`
                                 resize-none border border-black rounded-md
                                 p-2 h-10
@@ -485,7 +626,7 @@ const FormAdopt = () => {
                             `}
                             {...register('phone')} 
                         />
-                        {errors.phone && <span className="text-sm text-red-600">{errors.phone.message}</span>}
+                        {errors.phone && <span className="text-xs text-red-600 font-semibold">{errors.phone.message}</span>}
                     </div>
                     <div className="flex gap-2">
                         <div className="flex flex-col gap-2 grow">
@@ -503,7 +644,7 @@ const FormAdopt = () => {
                                 <option value="PR">Paraná</option>
                                 <option value="SP">São Paulo</option>
                             </select>
-                            { errors.state && <span className="text-sm text-red-600">{errors.state.message}</span> }
+                            { errors.state && <span className="text-xs text-red-600 font-semibold">{errors.state.message}</span> }
                         </div>
                         <div className="flex flex-col gap-2 grow">
                             <p className="text-md font-semibold">Cidade: </p>
@@ -520,7 +661,7 @@ const FormAdopt = () => {
                                 <option value="Paranaguá">Paranaguá</option>
                                 <option value="Curitiba">Curitiba</option>
                             </select>
-                            { errors.city && <span className="text-sm text-red-600">{errors.city.message}</span> }
+                            { errors.city && <span className="text-xs text-red-600 font-semibold">{errors.city.message}</span> }
                         </div>
                     </div>
                 </section>
@@ -533,7 +674,7 @@ const FormAdopt = () => {
                             isChecked={agreeStorageData}
                             setIsChecked={setAgreeStorageData}
                         />
-                        { error && !agreeStorageData && <span className="text-sm text-red-600">É necessário aceitar o armazenamento e uso dos dados informados.</span> }
+                        { error && !agreeStorageData && <span className="text-xs text-red-600 font-semibold">É necessário aceitar o armazenamento e uso dos dados informados.</span> }
                     </div>
                     <div className="flex flex-col gap-1 w-full">
                         <CheckBox 
@@ -546,21 +687,25 @@ const FormAdopt = () => {
                             isChecked={agreeUseTerms}
                             setIsChecked={setAgreeUseTerms}
                         />
-                        { error && !agreeUseTerms && <span className="text-sm text-red-600">É necessário aceitar os termos de uso.</span> }
+                        { error && !agreeUseTerms && <span className="text-xs text-red-600 font-semibold">É necessário aceitar os termos de uso.</span> }
                     </div>
                     
                 </section>
 
-                <button type="submit" className={`
-                    inline-flex w-full px-6 py-3 h-12 bg-darkblue-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal
-                `}>
-                    <span className="text-md font-semibold text-white shadow-sm">
-                        Publicar
+                <button
+                    type="submit" 
+                    className={`
+                        inline-flex w-full px-6 py-3 h-12 bg-darkblue-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal
+                        hover:bg-darkblue-hover disabled:shadow-btn-disable disabled:bg-darkblue-light_active text-white disabled:text-black
+                    `}
+                    disabled={isSubmitting}
+                >
+                    <span className="text-md font-semibold shadow-sm">
+                        {isSubmitting ? "Publicando...": 'Publicar'}
                     </span>
                 </button>
             </div>
         </form>
-    </>
   )
 }
 

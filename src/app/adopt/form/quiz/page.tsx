@@ -1,6 +1,65 @@
+// "use client"
 import FormAdopt from "@/components/FormAdopt";
+import Adopt from "@/components/quiz/Adopt";
+import QAlternative from "@/components/quiz/QAlternative";
+import QDescriptive from "@/components/quiz/QDescriptive";
+import Questions from "@/components/quiz/Questions";
 
-export default function PageAdoptFormQuiz() {
+interface Response { 
+    id_question: string 
+    response: string 
+}
+
+interface Question {
+    id: string;
+    question: string;
+    type: number;
+    alternatives: {
+        id: string;
+        alternative: string;
+    }[];
+    others: boolean;
+}
+
+interface Quiz {
+    id: string;
+    title: string;
+    description: string;
+    questions: Question[];
+}
+
+interface AdoptData{
+    id_adopter: string;
+    id_post: string;
+    id_quiz: string;
+    responses: Response[]
+}
+
+export default async function PageAdoptFormQuiz() {
+    const res = await fetch("http://localhost:3000/quiz/5e8f5f7b-fa3c-42b2-9304-5a243030613c", {
+        cache: "no-store",
+    });
+
+    const quiz: Quiz = await res.json();
+
+    const adopt = async (data: AdoptData) => {
+        "use server";
+
+        const url = "http://localhost:3000/adopt";
+	
+		const response = await fetch(url, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(data),
+		});
+	
+		const responseData = await response.json();
+
+        return responseData;
+    }
+
     return (
         <>
             <div className="relative flex flex-col justify-center items-center h-[350px] lg:h-[400px] w-full pt-20 lg:pt-24 -z-50">
@@ -13,8 +72,8 @@ export default function PageAdoptFormQuiz() {
                     h-[125px] w-[80%] px-10
                     bg-white border border-black rounded-lg
                 `}>
-                    <h1 className="text-xl lg:text-2xl font-semibold">Colocar para adoção</h1>
-                    <p className="text-md lg:text-lg font-medium text-gray-600">Conte-nos sobre o bicho</p>
+                    <h1 className="text-xl lg:text-2xl font-semibold">{quiz.title}</h1>
+                    <p className="text-md lg:text-lg font-medium text-gray-600">{quiz.description}</p>
                 </div>
                 <div className="absolute bottom-[15%] right-0 hidden lg:block lg:w-[300px]">
                     {/* <img src="../../../dog-form-2.svg" alt="" /> */}
@@ -23,17 +82,15 @@ export default function PageAdoptFormQuiz() {
             </div>
             <div className="flex flex-col items-center bg-beige-normal w-full">
                 <div className="flex flex-col pb-[100px] w-[80%]">
-                    <h1 className="text-2xl font-semibold mb-4">Sobre você</h1>
+                    {/* <h1 className="text-2xl font-semibold mb-4">Sobre você</h1>
                     <p className="text-lg font-semibold">Você está ciente que esta é uma adoção conjunta?</p>
-                    <p className="text-gray-600">Este formulário é para a adoção de dois ou mais animais</p>
+                    <p className="text-gray-600">{quiz.description}</p> */}
 
-
-                    <div className={`
-                        p-4 rounded-lg
-                        bg-white border border-md border-black
-                    `}>
-                        <p className="text-lg font-normal">Você está ciente que esta é uma adoção conjunta?</p>
-                    </div>
+                    <Adopt
+                        id_quiz={quiz.id}
+                        adopt={adopt}
+                        questions={quiz.questions}
+                    />
                 </div>
             </div>
             

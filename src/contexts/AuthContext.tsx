@@ -4,9 +4,25 @@ import { useRouter } from "next/navigation";
 import { setCookie, parseCookies, destroyCookie } from "nookies";
 
 type User = {
-    username: string;
+    id: string;
     name: string;
+    username: string;
+    role: number;
+    description: string;
     email: string;
+    date_birth: string;
+    created_at: Date;
+    city: {
+        name: string;
+        state: {
+            name: string;
+            abbreviation: string;
+        }
+    }
+    profile_picture: {
+        id: string;
+        url: string;
+    }
 };
 
 type SignInData = {
@@ -18,98 +34,141 @@ type AuthContextType = {
     user: User | null;
     isAuthenticated: boolean;
     signIn: (data: SignInData) => Promise<void>;
-	logOut: () => void;
+    errorSignIn: string;
+    logOut: () => void;
+    getUser: () => void;
 };
 
 export const AuthContext = createContext({} as AuthContextType);
 
 export function AuthProvider({ children }: any) {
     const [user, setUser] = useState<User | null>(null);
+    const [errorSignIn, setErrorSignIn] = useState('');
     const isAuthenticated = !!user;
     const { push } = useRouter();
 
-	useEffect( () => {
-		const { 'bichos.token': token } = parseCookies();
-		me(token);	
-	}, []);
+    useEffect(() => {
+        const { "bichos.token": token } = parseCookies();
+        load(token);
+    }, []);
 
-	async function me(token: string) {
+    async function load(token: string){
+        await me(token);
+        await getUser();
+    }
+
+    async function me(token: string) {
         const url = "http://localhost:3000/auth/me";
 
-		if (token) {
-			fetch(url, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					'Authorization': `Bearer ${token}`
-				},
-				body: JSON.stringify({}),
-			})
-			.then((response) => {
-				if (!response.ok) {
-					throw new Error("Erro na solicitação");
-				}
-				return response.json();
-			})
-			.then((responseData) => {
-				const userData = responseData.user;
-				setUser({
-					email: userData.email,
-					username: userData.username,
-					name: userData.name
-				});
+        if (token) {
+            await fetch(url, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error("Erro na solicitação");
+                    }
+                    return response.json();
+                })
+                .then((responseData) => {
+                    const data = responseData.user;
+                    setUser({...data})
+                });
+        }
+    }
 
-				
-			})
-		}
+    async function getUser() {
+        const { "bichos.token": token } = parseCookies();
+
+        if (user) {
+            let roleName = '';
+
+            if(user.role === 1){
+                roleName = 'person'
+            } else if(user.role === 2){
+                roleName = 'shelter'
+            }else{
+                roleName = 'ngo'
+            }
+            const url = `http://localhost:3000/${roleName}/${user.id}`;
+        
+            await fetch(url, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Erro na solicitação");
+                }
+                return response.json();
+            })
+            .then((responseData) => {
+                setUser({...responseData});
+            });
+        }
     }
 
     async function signIn({ email, password }: SignInData) {
-        const url = "http://localhost:3000/auth/login";
-        const data = {
-            email,
-            password: password,
-        };
-
-        fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-        })
-		.then((response) => {
-			if (!response.ok) {
-				throw new Error("Erro na solicitação");
+		const url = "http://localhost:3000/auth/login";
+		const data = {
+			email,
+			password,
+		};
+	
+		const response = await fetch(url, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(data),
+		});
+	
+		const responseData = await response.json();
+	
+		console.log("Resposta da API:", responseData.message);
+	
+		if (responseData.error && typeof responseData.message === "string") {
+			setErrorSignIn(responseData.message);
+		} else if (responseData.error) {
+			const values: any[] = Object.values(responseData.message);
+			for (const value of values) {
+				if (value[0]) {
+					setErrorSignIn(value[0]);
+				}
 			}
-			return response.json();
-		})
-		.then((responseData) => {
-			console.log("Resposta da API:", responseData);
-
+		} else {
 			const token: string = responseData.accessToken;
 			setCookie(undefined, "bichos.token", token, {
 				maxAge: 60 * 60 * 1,
 			});
-
-			me(token);
-
+	
+			// Atualizar o estado de errorSignIn antes de usar push
+			setErrorSignIn("");
+	
+			await load(token);
+	
 			push("/");
-		})
-		.catch((error) => {
-			console.error("Erro:", error);
-		});
-    }
-
-	function logOut() {
-		destroyCookie(undefined, 'bichos.token');
-		setUser(null);
-
-		push("/");
+		}
 	}
 
+    function logOut() {
+        destroyCookie(undefined, "bichos.token");
+        setUser(null);
+
+        push("/");
+    }
+
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated, signIn, logOut }}>
+        <AuthContext.Provider
+            value={{ user, isAuthenticated, signIn, errorSignIn, logOut, getUser }}
+        >
             {children}
         </AuthContext.Provider>
     );
