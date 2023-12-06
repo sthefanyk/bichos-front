@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useContext, useEffect, useState } from "react";
 import CardAnimal from "./CardAnimal";
 import Link from 'next/link';
@@ -21,7 +22,7 @@ const ListCardAnimal = ({getPosts}: ListCardAnimalProps) => {
     const [data, setData] = useState([]);
     const [lastPage, setLastPage] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
-    const perPage = 8;
+    const perPage = 12;
     
     const [typePost, setTypePost] = useState('adopt');
     const [filter, setFilter] = useState('');
@@ -33,7 +34,7 @@ const ListCardAnimal = ({getPosts}: ListCardAnimalProps) => {
 
     useEffect(() => {
         const findPosts = async () => {
-            const { posts, paginationPresenter } = await getPosts(`http://localhost:3000/post/${typePost}${pagination}${filter}`);
+            const { posts, paginationPresenter } = await getPosts(`${process.env.NEXT_PUBLIC_URL_API}/post/${typePost}${pagination}${filter}`);
             
             setData(posts);
             setLastPage(paginationPresenter.last_page);

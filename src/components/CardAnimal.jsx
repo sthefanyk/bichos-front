@@ -106,8 +106,10 @@ const CardAnimal = ({post}) => {
     }
 
     function formatWord(word) {
-        const formatted_word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-        return formatted_word;
+        if(word){
+            const formatted_word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            return formatted_word;
+        }
     }
 
     function handleAdopt(){
@@ -135,16 +137,21 @@ const CardAnimal = ({post}) => {
                     </picture>
                 </div>
                 <div className="w-[300px]">
-                    <p className="font-semibold text-xl lg:text-2xl">
+                    <p className="font-semibold text-xl lg:text-xl">
                         {formatWord(post.animal.name)}
                     </p>
-                    <p className="text-lg lg:text-xl font-medium">
+                    <p className="text-lg lg:text-sm font-medium">
                         {post.animal.sex === 0 ? 'Macho' : 'Fêmea' }, {calcAge(post.animal.date_birth)}
                     </p>
-                    <p className="text-lg lg:text-xl font-medium">
-                        {post.animal.health.neutered ? 'Castrado(a)': 'Não castrado(a)'}
-                    </p>
-                    <p className="text-lg lg:text-xl font-medium">
+                    {
+                        post.animal.health && (
+                            <p className="text-lg lg:text-sm font-medium">
+                                {post.animal.health.neutered ? 'Castrado(a)': 'Não castrado(a)'}
+                            </p>
+                        )
+                    }
+                    
+                    <p className="text-lg lg:text-sm font-medium">
                         {formatWord(post.posted_by.city.name)}, {post.posted_by.city.state.abbreviation}
                     </p>
                 </div>
@@ -231,9 +238,14 @@ const CardAnimal = ({post}) => {
                                         <span className="flex gap-2 items-center text-sm font-medium text-gray-600"> <GiSittingDog />
                                             {post.animal.sex === 0 ? 'Macho' : 'Fêmea' }, {calcAge(post.animal.date_birth)}
                                         </span>
-                                        <span className="flex gap-2 items-center text-sm font-medium text-gray-600"> <GiSittingDog />
-                                            {post.animal.health.neutered ? 'Castrado(a)': 'Não castrado(a)'}
-                                        </span>
+                                        {
+                                            post.animal.health && (
+                                                <span className="flex gap-2 items-center text-sm font-medium text-gray-600"> <GiSittingDog />
+                                                    {post.animal.health.neutered ? 'Castrado(a)': 'Não castrado(a)'}
+                                                </span>
+                                            )
+                                        }
+                                        
                                         <span className="flex gap-2 items-center text-sm font-medium text-gray-600"><GiSittingDog />
                                             {formatWord(post.animal.breed)}
                                         </span>
@@ -307,8 +319,11 @@ const CardAnimal = ({post}) => {
                                     <span className="text-sm font-semibold text-darkblue-normal">Não castrado(a)</span>
 
                                     <div className="flex flex-col gap-2">
-                                        <span className="text-md font-semibold">Medicamentos</span>
+                                        { post.animal.health && post.animal.health.vaccines_medicines.length > 0 && (
+                                            <span className="text-md font-semibold">Medicamentos</span>
+                                        ) }
                                         {
+                                            post.animal.health &&
                                             post.animal.health.vaccines_medicines.map(vm => {
                                                 if (vm.type === 1) {
                                                     return (
@@ -348,8 +363,10 @@ const CardAnimal = ({post}) => {
                                     </div>
 
                                     <div className="flex flex-col gap-2">
-                                        <span className="text-md font-semibold">Vacinas</span>
-                                        {
+                                        {post.animal.health && post.animal.health.vaccines_medicines.length > 0 && (
+                                            <span className="text-md font-semibold">Vacinas</span>
+                                        ) }
+                                        {   post.animal.health && 
                                             post.animal.health.vaccines_medicines.map(vm => {
                                                 if (vm.type === 0) {
                                                     return (
@@ -389,8 +406,11 @@ const CardAnimal = ({post}) => {
                                     </div>
 
                                     <div className="flex flex-col gap-2">
-                                        <span className="text-md font-semibold">Doenças e Alergias</span>
+                                        {post.animal.health && post.animal.health.disease_allergy.length > 0 && (
+                                            <span className="text-md font-semibold">Doenças e Alergias</span>
+                                        ) }
                                         {
+                                            post.animal.health && 
                                             post.animal.health.disease_allergy.map(da => (
                                                 <div key={da.id} className="flex flex-col gap-2 mx-4 mb-2">
                                                     <div className="flex justify-between">
@@ -425,7 +445,7 @@ const CardAnimal = ({post}) => {
                                     </div>
 
                                     {
-                                        post.animal.health.additional && (
+                                        post.animal.health && post.animal.health.additional && (
                                             <div className="flex flex-col gap-2">
                                                 <span className="text-md font-semibold">Informações adicionais</span>
                                                 <span className="text-sm text-gray-600 font-medium mx-4">
@@ -441,8 +461,6 @@ const CardAnimal = ({post}) => {
                                 <div className="h-[1px] w-full bg-darkblue-normal"></div>
 
                             </div>
-
-
 
                             <div className="flex justify-end gap-4 p-2">
                                 <button

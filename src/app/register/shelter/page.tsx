@@ -1,10 +1,14 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useContext, useState } from "react";
 
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { BsCaretDownFill } from "react-icons/bs";
+import { LocalizationContext } from "@/contexts/LocalizationContext";
+import { AuthContext } from "@/contexts/AuthContext";
+import { AiOutlineCloseCircle } from "react-icons/ai";
 
 const createShelterSchema = z.object({
     email: z
@@ -12,7 +16,7 @@ const createShelterSchema = z.object({
         .min(1, "Por favor, insira o e-mail.")
         .email("E-mail inválido."),
     full_name: z.string().min(1, "Por favor, insira o nome completo."),
-    date_birth: z
+    responsible_date_birth: z
         .string()
         .refine(
             (date) => date !== "",
@@ -22,7 +26,18 @@ const createShelterSchema = z.object({
             (date) => new Date(date) < new Date(),
             "Por favor, insira uma data válida."
         ),
-    cpf: z.string().min(11, "Por favor, insira o cpf."),
+    responsible_cpf: z.string().min(11, "Por favor, insira o cpf."),
+    star_date_shelter: z
+        .string()
+        .refine(
+            (date) => date !== "",
+            "Por favor, insira a data."
+        )
+        .refine(
+            (date) => new Date(date) < new Date(),
+            "Por favor, insira uma data válida."
+        ),
+    name_shelter: z.string().min(1, "Por favor, insira o nome do abrigo."),
     state: z.string().min(1, "Por favor, informe o estado."),
     city: z.string().min(1, "Por favor, informe a cidade."),
 });
@@ -53,31 +68,50 @@ export default function ShelterPage() {
 
     const [form, setForm] = useState({ user: "box", account: "hidden" });
     const [shelterData, setShelterData] = useState({});
+    const [error, setError] = useState('');
+    const { statesWithCities } = useContext(LocalizationContext);
+    const { addToken } = useContext(AuthContext);
 
-    const createUser = (data: CreateUserData) => {
+    const selectedState = shelter.watch("state");
+
+    const createUser =  async (data: CreateUserData) => {
         console.log({ ...data, ...shelterData });
 
-        const url = "http://localhost:3000/shelter";
-        fetch(url, {
+        const url = `${process.env.NEXT_PUBLIC_URL_API}/shelter`;
+        await fetch(url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({ ...data, ...shelterData }),
         })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Erro na solicitação");
+        .then((response) => {
+            if (!response.ok) {
+                // throw new Error("Erro na solicitação");
+            }
+            return response.json();
+        })
+        .then((responseData) => {
+            console.log(responseData);
+            
+            if (responseData.error && typeof responseData.message === "string") {
+                setError(responseData.message);
+            }else if(responseData.error){
+                const values: any[] = Object.values(responseData.message);
+                for (const value of values) {
+                    if(value[0]){
+                        setError(value[0]);
+                    }
                 }
-                return response.json();
-            })
-            .then((responseData) => {
-                const { id } = responseData;
-                console.log(id);
-            })
-            .catch((error) => {
-                console.error("Error:", error);
-            });
+            }else{
+                const token: string = responseData.accessToken;
+                login(token);
+            }
+        });
+    };
+
+    const login = async (token: string) => {
+        await addToken(token);
     };
 
     const handleUser = (data: CreateShelterData) => {
@@ -111,7 +145,17 @@ export default function ShelterPage() {
         }
         <div className={`h-2 bg-orangee-normal ${form.user === "box" ? "w-[50%]" : ""}`}></div>
         <main className="grow flex flex-col items-center justify-center">
-            <p className="text-2xl lg:text-3xl font-bold mb-8 mt-24">
+            {error && (
+                <div className="absolute top-4 right-2 px-4 py-2 border-2 rounded-lg border-red-600 bg-red-600 bg-opacity-30 flex gap-2 items-center">
+                    <span className="text-md text-red-600 font-semibold">
+                        {error}
+                    </span>
+                    <button onClick={() => setError('')}>
+                        <AiOutlineCloseCircle className="text-red-600 w-6 h-6"/>
+                    </button>
+                </div>
+            )}
+            <p className="text-2xl lg:text-3xl font-bold mb-4 mt-8">
                 Bem-vindo a Bichos
             </p>
             <div className="grow flex w-full justify-center items-center justify-evenly">
@@ -119,151 +163,234 @@ export default function ShelterPage() {
                     onSubmit={shelter.handleSubmit(handleUser)}
                     className={`
                             flex flex-col px-4 py-6 bg-lighttext-normal rounded-md justify-center items-center shadow-btn border border-black
-                            w-2/6 gap-6
+                            w-2/6 gap-2
                             ${form.user}
                         `}
                 >
                     <h1 className="w-full text-xl font-bold">Informações</h1>
                     <div className="min-w-full">
+                        <label className="text-xs text-gray-600 font-bold">Nome completo</label>
                         <input
                             type="text"
-                            placeholder="Nome completo"
+                            placeholder="Digite seu nome completo"
                             className={`
-                                    bg-lighttext-normal
-                                    border-b-2 border-gray-500
-                                    min-w-full h-12
-                                    placeholder-gray-700
-                                    text-md font-semibold
-                                `}
+                                bg-lighttext-normal
+                                border-b-2 border-gray-500
+                                min-w-full h-10 p-2
+                                placeholder-gray-500
+                                text-md font-semibold
+                                resize-none
+                                focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                            `}
                             {...shelter.register("full_name")}
                         />
                         {shelter.formState.errors.full_name && (
-                            <span className="text-sm text-red-600">
+                            <span className="text-xs text-red-600 font-semibold">
                                 {shelter.formState.errors.full_name.message}
                             </span>
                         )}
                     </div>
-                    <div className="min-w-full">
-                        <input
-                            type="email"
-                            placeholder="E-mail"
-                            className={`
-                                    bg-lighttext-normal
-                                    border-b-2 border-gray-500
-                                    min-w-full h-12
-                                    placeholder-gray-700
-                                    text-md font-semibold
-                                `}
-                            {...shelter.register("email")}
-                        />
-                        {shelter.formState.errors.email && (
-                            <span className="text-sm text-red-600">
-                                {shelter.formState.errors.email.message}
-                            </span>
-                        )}
-                    </div>
+                    
                     <div className="w-full flex gap-[4%] ">
                         <div className="min-w-[48%]">
+                            <label className="text-xs text-gray-600 font-bold">CPF</label>
                             <input
                                 type="text"
-                                placeholder="CPF"
+                                placeholder="Digite o CPF"
                                 className={`
-                                        bg-lighttext-normal
-                                        border-b-2 border-gray-500
-                                        w-full h-12
-                                        placeholder-gray-700
-                                        text-md font-semibold
-                                    `}
-                                {...shelter.register("cpf")}
+                                    bg-lighttext-normal
+                                    border-b-2 border-gray-500
+                                    min-w-full h-10 p-2
+                                    placeholder-gray-500
+                                    text-md font-semibold
+                                    resize-none
+                                    focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                `}
+                                {...shelter.register("responsible_cpf")}
                             />
-                            {shelter.formState.errors.cpf && (
-                                <span className="text-sm text-red-600">
-                                    {shelter.formState.errors.cpf.message}
+                            {shelter.formState.errors.responsible_cpf && (
+                                <span className="text-xs text-red-600 font-semibold">
+                                    {shelter.formState.errors.responsible_cpf.message}
                                 </span>
                             )}
                         </div>
                         <div className="min-w-[48%]">
+                            <label className="text-xs text-gray-600 font-bold">Data de nascimento</label>
                             <input
                                 type="date"
-                                placeholder="Data de nascimento"
+                                placeholder="Digite a data de nascimento"
                                 className={`
-                                        bg-lighttext-normal
-                                        border-b-2 border-gray-500
-                                        min-w-full h-12
-                                        text-gray-700
-                                        text-md font-semibold
-                                    `}
-                                {...shelter.register("date_birth")}
+                                    bg-lighttext-normal
+                                    border-b-2 border-gray-500
+                                    min-w-full h-10 p-2
+                                    placeholder-gray-500
+                                    text-md font-semibold
+                                    resize-none
+                                    focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                `}
+                                {...shelter.register("responsible_date_birth")}
                             />
-                            {shelter.formState.errors.date_birth && (
-                                <span className="text-sm text-red-600">
+                            {shelter.formState.errors.responsible_date_birth && (
+                                <span className="text-xs text-red-600 font-semibold">
                                     {
-                                        shelter.formState.errors.date_birth
+                                        shelter.formState.errors.responsible_date_birth
                                             .message
                                     }
                                 </span>
                             )}
                         </div>
                     </div>
+                    <div className="min-w-full">
+                        <label className="text-xs text-gray-600 font-bold">E-mail</label>
+                        <input
+                            type="email"
+                            placeholder="Digite o e-mail"
+                            className={`
+                                bg-lighttext-normal
+                                border-b-2 border-gray-500
+                                min-w-full h-10 p-2
+                                placeholder-gray-500
+                                text-md font-semibold
+                                resize-none
+                                focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                            `}
+                            {...shelter.register("email")}
+                        />
+                        {shelter.formState.errors.email && (
+                            <span className="text-xs text-red-600 font-semibold">
+                                {shelter.formState.errors.email.message}
+                            </span>
+                        )}
+                    </div>
+                    <div className="w-full flex gap-[4%] ">
+                        <div className="min-w-[48%]">
+                            <label className="text-xs text-gray-600 font-bold">Nome do abrigo</label>
+                            <input
+                                type="text"
+                                placeholder="Digite o nome do abrigo"
+                                className={`
+                                    bg-lighttext-normal
+                                    border-b-2 border-gray-500
+                                    min-w-full h-10 p-2
+                                    placeholder-gray-500
+                                    text-md font-semibold
+                                    resize-none
+                                    focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                `}
+                                {...shelter.register("name_shelter")}
+                            />
+                            {shelter.formState.errors.name_shelter && (
+                                <span className="text-xs text-red-600 font-semibold">
+                                    {shelter.formState.errors.name_shelter.message}
+                                </span>
+                            )}
+                        </div>
+                        <div className="min-w-[48%]">
+                            <label className="text-xs text-gray-600 font-bold">Data de inicio do abrigo</label>
+                            <input
+                                type="date"
+                                placeholder="Digite a data de nascimento"
+                                className={`
+                                    bg-lighttext-normal
+                                    border-b-2 border-gray-500
+                                    min-w-full h-10 p-2
+                                    placeholder-gray-500
+                                    text-md font-semibold
+                                    resize-none
+                                    focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                `}
+                                {...shelter.register("star_date_shelter")}
+                            />
+                            {shelter.formState.errors.star_date_shelter && (
+                                <span className="text-xs text-red-600 font-semibold">
+                                    {
+                                        shelter.formState.errors.star_date_shelter
+                                            .message
+                                    }
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="w-full flex gap-4">
-                        <select
-                            defaultValue=""
-                            className={`
-                                    bg-lighttext-normal
-                                    border-b-2 border-gray-500
-                                    grow h-12
-                                    text-gray-700
-                                    text-md font-semibold
-                                `}
-                            {...shelter.register("state")}
-                        >
-                            <option key="" value="" disabled>
-                                Estado
-                            </option>
-                            <option key="Paraná" value="Paraná">
-                                Paraná
-                            </option>
-                            <option key="São Paulo" value="São Paulo">
-                                São Paulo
-                            </option>
-                        </select>
-                        {shelter.formState.errors.state && (
-                            <span className="text-sm text-red-600">
-                                {shelter.formState.errors.state.message}
-                            </span>
-                        )}
-                        <select
-                            defaultValue=""
-                            className={`
-                                    bg-lighttext-normal
-                                    border-b-2 border-gray-500
-                                    grow h-12
-                                    text-gray-700
-                                    text-md font-semibold
-                                `}
-                            {...shelter.register("city")}
-                        >
-                            <option key="" value="" disabled>
-                                Cidade
-                            </option>
-                            <option key="Paranaguá" value="Paranaguá">
-                                Paranaguá
-                            </option>
-                            <option key="Curitiba" value="Curitiba">
-                                Curitiba
-                            </option>
-                            <option key="Matinhos" value="Matinhos">
-                                Matinhos
-                            </option>
-                            <option key="Antônina" value="Antônina">
-                                Antônina
-                            </option>
-                        </select>
-                        {shelter.formState.errors.city && (
-                            <span className="text-sm text-red-600">
-                                {shelter.formState.errors.city.message}
-                            </span>
-                        )}
+                        <div className="flex flex-col w-full">
+                            <label className="text-xs text-gray-600 font-bold">Estado</label>
+                            <div className="relative inline-flex items-center grow">
+                                <select
+                                    defaultValue=""
+                                    className={`
+                                        appearance-none
+                                        bg-lighttext-normal border-b-2 border-gray-500 placeholder-gray-500
+                                        text-md font-semibold
+                                        resize-none leading-tight
+                                        h-10 py-2 px-4 pr-8
+                                        focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                        peer grow
+                                    `}
+                                    {...shelter.register("state")}
+                                >
+                                    <option key="" value="" disabled>
+                                        Estado
+                                    </option>
+                                    {
+                                        statesWithCities.map((state) => (
+                                            <option key={state.state.name} value={state.state.name}>
+                                                {state.state.name}
+                                            </option>
+                                        ))
+                                    }
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 peer-focus:text-lightblue-normal">
+                                    <BsCaretDownFill className="w-4" />
+                                </div>
+                            </div>
+                            {shelter.formState.errors.state && (
+                                <span className="text-xs text-red-600 font-semibold font-semibold">
+                                    {shelter.formState.errors.state.message}
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex flex-col w-full">
+                            <label className="text-xs text-gray-600 font-bold">Cidade</label>
+                            <div className="relative inline-flex items-center grow">
+                                <select
+                                    defaultValue=""
+                                    className={`
+                                        appearance-none
+                                        bg-lighttext-normal border-b-2 border-gray-500 placeholder-gray-500
+                                        text-md font-semibold
+                                        resize-none leading-tight
+                                        h-10 py-2 px-4 pr-8
+                                        focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                        peer grow
+                                    `}
+                                    {...shelter.register("city")}
+                                    disabled={selectedState === ''}
+                                >
+                                    <option key="" value="" disabled>Cidade</option>
+                                    {
+                                        statesWithCities.map((state) => {
+                                            if(state.state.name === selectedState){
+                                                return state.cities.map((city) => (
+                                                    <option key={city} value={city}>
+                                                        {city}
+                                                    </option>
+                                                ))
+                                            }
+                                            return null;
+                                        })
+                                    }
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 peer-focus:text-lightblue-normal">
+                                    <BsCaretDownFill className="w-4" />
+                                </div>
+                            </div>
+                            {shelter.formState.errors.city && (
+                                <span className="text-xs text-red-600 font-semibold font-semibold">
+                                    {shelter.formState.errors.city.message}
+                                </span>
+                            )}
+                        </div>
                     </div>
                     <div className="w-full">
                         <button
@@ -288,79 +415,91 @@ export default function ShelterPage() {
                 >
                     <h1 className="w-full text-xl font-bold">Criar conta</h1>
                     <div className="min-w-full">
+                        <label className="text-xs text-gray-600 font-bold">Nickname</label>
                         <input
                             type="text"
                             placeholder="Nome"
                             className={`
-                                    bg-lighttext-normal
-                                    border-b-2 border-gray-500
-                                    min-w-full h-12
-                                    placeholder-gray-700
-                                    text-md font-semibold
-                                `}
+                                bg-lighttext-normal
+                                border-b-2 border-gray-500
+                                min-w-full h-10 p-2
+                                placeholder-gray-500
+                                text-md font-semibold
+                                resize-none
+                                focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                            `}
                             {...user.register("name")}
                         />
                         {user.formState.errors.name && (
-                            <span className="text-sm text-red-600">
+                            <span className="text-xs text-red-600 font-semibold">
                                 {user.formState.errors.name.message}
                             </span>
                         )}
                     </div>
                     <div className="min-w-full">
+                        <label className="text-xs text-gray-600 font-bold">Username</label>
                         <input
                             type="text"
                             placeholder="Nome de usuário"
                             className={`
-                                    bg-lighttext-normal
-                                    border-b-2 border-gray-500
-                                    min-w-full h-12
-                                    placeholder-gray-700
-                                    text-md font-semibold
-                                `}
+                                bg-lighttext-normal
+                                border-b-2 border-gray-500
+                                min-w-full h-10 p-2
+                                placeholder-gray-500
+                                text-md font-semibold
+                                resize-none
+                                focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                            `}
                             {...user.register("username")}
                         />
                         {user.formState.errors.username && (
-                            <span className="text-sm text-red-600">
+                            <span className="text-xs text-red-600 font-semibold">
                                 {user.formState.errors.username.message}
                             </span>
                         )}
                     </div>
                     <div className="w-full flex gap-4">
                         <div className="">
+                            <label className="text-xs text-gray-600 font-bold">Senha</label>
                             <input
                                 type="password"
                                 placeholder="Senha"
                                 className={`
-                                        bg-lighttext-normal
-                                        border-b-2 border-gray-500
-                                        grow h-12
-                                        placeholder-gray-700
-                                        text-md font-semibold
-                                    `}
+                                    bg-lighttext-normal
+                                    border-b-2 border-gray-500
+                                    min-w-full h-10 p-2
+                                    placeholder-gray-500
+                                    text-md font-semibold
+                                    resize-none
+                                    focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                `}
                                 {...user.register("password")}
                             />
                             {user.formState.errors.password && (
-                                <span className="text-sm text-red-600">
+                                <span className="text-xs text-red-600 font-semibold">
                                     {user.formState.errors.password.message}
                                 </span>
                             )}
                         </div>
 
                         <div className="">
+                            <label className="text-xs text-gray-600 font-bold">Confirmar senha</label>
                             <input
                                 type="password"
                                 placeholder="Confirme a senha"
                                 className={`
-                                        bg-lighttext-normal
-                                        border-b-2 border-gray-500
-                                        grow h-12
-                                        placeholder-gray-700
-                                        text-md font-semibold
-                                    `}
+                                    bg-lighttext-normal
+                                    border-b-2 border-gray-500
+                                    min-w-full h-10 p-2
+                                    placeholder-gray-500
+                                    text-md font-semibold
+                                    resize-none
+                                    focus:outline-none focus:ring-b-2 focus:border-lightblue-normal focus:ring-lightblue-normal
+                                `}
                                 {...user.register("passwordConfirm")}
                             />
                             {user.formState.errors.passwordConfirm && (
-                                <span className="text-sm text-red-600">
+                                <span className="text-xs text-red-600 font-semibold">
                                     {
                                         user.formState.errors.passwordConfirm
                                             .message
@@ -373,11 +512,12 @@ export default function ShelterPage() {
                         <button
                             type="submit"
                             className={`
-                            inline-flex w-full px-8 py-3 h-12 bg-orangee-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal
-                            text-md font-semibold text-lighttext-normal
-                        `}
+                                inline-flex w-full px-8 py-3 h-12 bg-orangee-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal
+                                text-md font-semibold text-lighttext-normal disabled:shadow-btn-disable disabled:bg-orange-400
+                            `}
+                            disabled={user.formState.isSubmitting}
                         >
-                            Criar conta
+                            {user.formState.isSubmitting ? "Criando...": 'Criar conta'}
                         </button>
                     </div>
                 </form>

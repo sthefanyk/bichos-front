@@ -54,7 +54,7 @@ export type InputPost = {
 export default function PageAdoptFormPost() {
     async function post(data: InputPost) {
         "use server";
-        const url = "http://localhost:3000/post/adopt";
+        const url = `${process.env.NEXT_PUBLIC_URL_API}/post/adopt`;
 
         const response = await fetch(url, {
             method: "POST",

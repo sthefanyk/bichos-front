@@ -21,7 +21,7 @@ export function PersonalityProvider({ children }: any) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch("http://localhost:3000/personality/active", {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_URL_API}/personality/active`, {
                     cache: "no-store",
                 });
 

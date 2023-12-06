@@ -7,6 +7,7 @@ import { LocalizationProvider } from '@/contexts/LocalizationContext'
 import { BreedProvider } from '@/contexts/BreedContext'
 import { PersonalityProvider } from '@/contexts/PersonalityContext'
 import { PostProvider } from '@/contexts/PostContext'
+import { NotificationProvider } from '@/contexts/NotificationContext'
 
 export const metadata: Metadata = {
   title: 'Bichos',
@@ -28,11 +29,14 @@ export default function RootLayout({
             <BreedProvider>
               <PersonalityProvider>
                 <PostProvider>
-                  <>
-                    <Navbar />
-                    {children}
-                    {/* <Footer /> */}
-                  </>
+                  <NotificationProvider>
+
+                    <>
+                      <Navbar />
+                      {children}
+                      {/* <Footer /> */}
+                    </>
+                  </NotificationProvider>
                 </PostProvider>
               </PersonalityProvider>
             </BreedProvider>

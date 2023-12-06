@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { BsCaretDownFill } from "react-icons/bs";
 import { AiOutlineCloseCircle } from "react-icons/ai";
 import { LocalizationContext } from "@/contexts/LocalizationContext";
+import { AuthContext } from "@/contexts/AuthContext";
 
 const createPersonSchema = z.object({
     email: z
@@ -58,42 +59,48 @@ export default function PersonPage() {
     const [personData, setPersonData] = useState({});
     const [error, setError] = useState('');
     const { statesWithCities } = useContext(LocalizationContext);
+    const { addToken } = useContext(AuthContext);
 
     const selectedState = person.watch("state");
 
     const createUser = async (data: CreateUserData) => {
         console.log({ ...data, ...personData });
 
-        const url = "http://localhost:3000/person";
+        const url = `${process.env.NEXT_PUBLIC_URL_API}/person`;
         await fetch(url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ ...data, ...personData }),
+            body: JSON.stringify({ ...data, ...personData, profile_picture: "45c43add-a624-4746-8ae5-eb0b166cd1e6" }),
         })
-            .then((response) => {
-                if (!response.ok) {
-                    // throw new Error("Erro na solicitação");
-                }
-                return response.json();
-            })
-            .then((responseData) => {
-                console.log(responseData);
-                
-                if (responseData.error && typeof responseData.message === "string") {
-                    setError(responseData.message);
-                }else{
-                    const values: any[] = Object.values(responseData.message);
-                    for (const value of values) {
-                        if(value[0]){
-                            setError(value[0]);
-                        }
+        .then((response) => {
+            if (!response.ok) {
+                // throw new Error("Erro na solicitação");
+            }
+            return response.json();
+        })
+        .then((responseData) => {
+            console.log(responseData);
+            
+            if (responseData.error && typeof responseData.message === "string") {
+                setError(responseData.message);
+            }else if(responseData.error){
+                const values: any[] = Object.values(responseData.message);
+                for (const value of values) {
+                    if(value[0]){
+                        setError(value[0]);
                     }
                 }
-                // const { id } = responseData;
-                // console.log(id);
-            });
+            }else{
+                const token: string = responseData.accessToken;
+                login(token);
+            }
+        });
+    };
+    
+    const login = async (token: string) => {
+        await addToken(token);
     };
 
     const handleUser = (data: CreatePersonData) => {

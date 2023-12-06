@@ -36,7 +36,7 @@ interface AdoptData{
 }
 
 export default async function PageAdoptFormQuiz() {
-    const res = await fetch("http://localhost:3000/quiz/5e8f5f7b-fa3c-42b2-9304-5a243030613c", {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_URL_API}/quiz/c4500a51-2172-448a-baaa-c6f0c4efed96`, {
         cache: "no-store",
     });
 
@@ -45,7 +45,7 @@ export default async function PageAdoptFormQuiz() {
     const adopt = async (data: AdoptData) => {
         "use server";
 
-        const url = "http://localhost:3000/adopt";
+        const url = `${process.env.NEXT_PUBLIC_URL_API}/adopt`;
 	
 		const response = await fetch(url, {
 			method: "POST",
@@ -65,7 +65,10 @@ export default async function PageAdoptFormQuiz() {
             <div className="relative flex flex-col justify-center items-center h-[350px] lg:h-[400px] w-full pt-20 lg:pt-24 -z-50">
                 <div className="bg-lime-normal h-2/3 w-full"></div>
                 <div className="absolute flex justify-center top-[25%] lg:top-[30%] lg:left-[20%] w-[250px]">
-                    {/* <img src="../../../doguinho nerd 3.svg" alt="" /> */}
+                    <picture>
+
+                        <img src="../../../doguinho nerd 3.svg" alt="" />
+                    </picture>
                 </div>
                 <div className={`
                     absolute top-[55%] flex flex-col justify-center
@@ -76,7 +79,9 @@ export default async function PageAdoptFormQuiz() {
                     <p className="text-md lg:text-lg font-medium text-gray-600">{quiz.description}</p>
                 </div>
                 <div className="absolute bottom-[15%] right-0 hidden lg:block lg:w-[300px]">
-                    {/* <img src="../../../dog-form-2.svg" alt="" /> */}
+                    <picture>
+                        <img src="../../../dog-form-2.svg" alt="" />
+                    </picture>
                 </div>
                 <div className="bg-beige-normal h-1/3 w-full"></div>
             </div>

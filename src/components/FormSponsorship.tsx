@@ -4,7 +4,6 @@ import DiseaseAllergy from "@/components/DiseaseAllergy";
 import AddPersonality from "@/components/AddPersonality";
 import CheckBox from "@/components/CheckBox";
 import InputPhotos, { Image } from "@/components/InputPhotos";
-import { FaCat, FaDog } from "react-icons/fa";
 
 import { useRouter } from "next/navigation";
 import { useState, useRef, useContext } from "react";
@@ -45,27 +44,11 @@ const createPostFormSchema = z.object({
 
 type CreatePostFormData = z.infer<typeof createPostFormSchema>;
 
-interface DosesProps {
-    date: string;
-    tomado: boolean;
-}
-
-interface MedVacProps {
-    doses: DosesProps[];
-    name: string;
-}
-
-interface DiseaseAllergyProps {
-    name: string;
-    description: string;
-    type: string;
-}
-
-interface FormAdoptProps {
+interface FormSponsorshipProps {
     post: (data: InputPost) => any;
 }
 
-const FormAdopt = ({ post }: FormAdoptProps) => {
+const FormSponsorship = ({ post }: FormSponsorshipProps) => {
     const { 
         register, 
         handleSubmit, 
@@ -277,8 +260,7 @@ const FormAdopt = ({ post }: FormAdoptProps) => {
                         <p className="text-md font-semibold">Tipo: </p>
                         <div className="flex gap-2">
                             <label className={`
-                                border border-black rounded-md h-10 p-2 cursor-pointer
-                                flex justify-center w-[100px]
+                                border border-black rounded-md p-2 h-10 w-10 cursor-pointer
                                 ${selectedType === "0" ? "bg-lime-normal" : ""}
                             `}>
                                 <input
@@ -287,14 +269,10 @@ const FormAdopt = ({ post }: FormAdoptProps) => {
                                     value="0"
                                     className="sr-only"
                                 />
-                                cachorro
-                                {/* <picture className="w-full h-full">
-                                    <img src="../../public/dog.svg" alt="d" />
-                                </picture> */}
+                                C
                             </label>
                             <label className={`
-                                border border-black rounded-md h-10 p-2 w-[100px] cursor-pointer
-                                flex justify-center
+                                border border-black rounded-md p-2 h-10 w-10 cursor-pointer
                                 ${selectedType === "1" ? "bg-lime-normal" : ""}
                             `}>
                                 <input
@@ -303,7 +281,7 @@ const FormAdopt = ({ post }: FormAdoptProps) => {
                                     value="1"
                                     className="sr-only"
                                 />
-                                gato
+                                G
                             </label>
                         </div>
                         { errors.type && <span className="text-xs text-red-600 font-semibold">{errors.type.message}</span> }
@@ -703,7 +681,6 @@ const FormAdopt = ({ post }: FormAdoptProps) => {
                     className={`
                         inline-flex w-full px-6 py-3 h-12 bg-darkblue-normal rounded-md justify-center items-center shadow-btn border border-darktext-normal
                         hover:bg-darkblue-hover disabled:shadow-btn-disable disabled:bg-darkblue-light_active text-white disabled:text-black
-                        active:shadow-btn-disable active:bg-darkblue-light_active active:text-black
                     `}
                     disabled={isSubmitting}
                 >
@@ -716,4 +693,4 @@ const FormAdopt = ({ post }: FormAdoptProps) => {
   )
 }
 
-export default FormAdopt
+export default FormSponsorship

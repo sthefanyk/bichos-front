@@ -57,7 +57,7 @@ export default function NGOPage() {
     const createUser = (data: CreateUserData) => {
         console.log({ ...data, ...ngoData });
 
-        const url = "http://localhost:3000/ngo";
+        const url = `${process.env.NEXT_PUBLIC_URL_API}/ngo`;
         fetch(url, {
             method: "POST",
             headers: {

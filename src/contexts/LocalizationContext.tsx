@@ -23,7 +23,7 @@ export function LocalizationProvider({ children }: any) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const responseStates = await fetch("http://localhost:3000/localization/states", {
+                const responseStates = await fetch(`${process.env.NEXT_PUBLIC_URL_API}/localization/states`, {
                     cache: "no-store",
                 });
 
@@ -35,7 +35,7 @@ export function LocalizationProvider({ children }: any) {
                 const states: State[] = responseDataStates.states;
 
                 const promises = states.map(async (state) => {
-                    const responseCities = await fetch("http://localhost:3000/localization/city/" + state.name, {
+                    const responseCities = await fetch(`${process.env.NEXT_PUBLIC_URL_API}/localization/city/` + state.name, {
                         cache: "no-store",
                     });
 

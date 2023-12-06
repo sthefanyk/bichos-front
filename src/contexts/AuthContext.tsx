@@ -37,6 +37,7 @@ type AuthContextType = {
     errorSignIn: string;
     logOut: () => void;
     getUser: () => void;
+    addToken: (token: string) => void;
 };
 
 export const AuthContext = createContext({} as AuthContextType);
@@ -58,7 +59,7 @@ export function AuthProvider({ children }: any) {
     }
 
     async function me(token: string) {
-        const url = "http://localhost:3000/auth/me";
+        const url = `${process.env.NEXT_PUBLIC_URL_API}/auth/me`;
 
         if (token) {
             await fetch(url, {
@@ -68,16 +69,16 @@ export function AuthProvider({ children }: any) {
                     Authorization: `Bearer ${token}`,
                 },
             })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error("Erro na solicitação");
-                    }
-                    return response.json();
-                })
-                .then((responseData) => {
-                    const data = responseData.user;
-                    setUser({...data})
-                });
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Erro na solicitação");
+                }
+                return response.json();
+            })
+            .then((responseData) => {
+                const data = responseData.user;
+                setUser({...data});
+            });
         }
     }
 
@@ -94,7 +95,7 @@ export function AuthProvider({ children }: any) {
             }else{
                 roleName = 'ngo'
             }
-            const url = `http://localhost:3000/${roleName}/${user.id}`;
+            const url = `${process.env.NEXT_PUBLIC_URL_API}/${roleName}/${user.id}`;
         
             await fetch(url, {
                 method: "GET",
@@ -116,7 +117,7 @@ export function AuthProvider({ children }: any) {
     }
 
     async function signIn({ email, password }: SignInData) {
-		const url = "http://localhost:3000/auth/login";
+		const url = `${process.env.NEXT_PUBLIC_URL_API}/auth/login`;
 		const data = {
 			email,
 			password,
@@ -132,31 +133,34 @@ export function AuthProvider({ children }: any) {
 	
 		const responseData = await response.json();
 	
-		console.log("Resposta da API:", responseData.message);
+		console.log("Resposta da API:", responseData);
 	
 		if (responseData.error && typeof responseData.message === "string") {
-			setErrorSignIn(responseData.message);
+			setErrorSignIn("E-mail ou senha incorretos!");
 		} else if (responseData.error) {
 			const values: any[] = Object.values(responseData.message);
 			for (const value of values) {
 				if (value[0]) {
-					setErrorSignIn(value[0]);
+					setErrorSignIn("E-mail ou senha incorretos!");
 				}
 			}
 		} else {
 			const token: string = responseData.accessToken;
-			setCookie(undefined, "bichos.token", token, {
-				maxAge: 60 * 60 * 1,
-			});
-	
-			// Atualizar o estado de errorSignIn antes de usar push
-			setErrorSignIn("");
-	
-			await load(token);
-	
-			push("/");
+            await addToken(token);
 		}
 	}
+
+    async function addToken(token: string){
+        setCookie(undefined, "bichos.token", token, {
+            maxAge: 60 * 60 * 1,
+        });
+
+        setErrorSignIn("");
+
+        await load(token);
+
+        push("/");
+    }
 
     function logOut() {
         destroyCookie(undefined, "bichos.token");
@@ -167,7 +171,7 @@ export function AuthProvider({ children }: any) {
 
     return (
         <AuthContext.Provider
-            value={{ user, isAuthenticated, signIn, errorSignIn, logOut, getUser }}
+            value={{ user, isAuthenticated, signIn, errorSignIn, logOut, getUser, addToken }}
         >
             {children}
         </AuthContext.Provider>

@@ -31,7 +31,7 @@ const Login = () => {
 
     const { push } = useRouter();
     const { signIn, errorSignIn } = useContext(AuthContext);
-    const [error, setError] = useState('Senha incorreta!');
+    const [error, setError] = useState('');
 
     const login = async (data: LoginData) => {
         await signIn(data);

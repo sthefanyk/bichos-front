@@ -24,7 +24,7 @@ type User = {
 
 export default async function Profile({params}: any){
 
-    const user: User = await fetch(`http://localhost:3000/user/${params.id}`, {
+    const user: User = await fetch(`${process.env.NEXT_PUBLIC_URL_API}/user/${params.id}`, {
         cache: "no-store",
         method: "GET",
         headers: {
@@ -122,8 +122,9 @@ export default async function Profile({params}: any){
                         <p>{formatWord(user.city.name)}, {user.city.state.abbreviation}</p>
                         {user.date_birth && (<p>Nascido(a) em {formatDate(user.date_birth)}</p>)}                        
                         <p>Ingressou em {formatDateMonthsAndYear(user.created_at)}</p>
-                        <p>Bichos que colocou para adoção: 3</p>
-                        <p>Bichos que solicitou apadrinhamento: 2</p>
+                        {/* <p>Bichos que colocou para adoção: 3</p>
+                        <p>Bichos que solicitou apadrinhamento: 2</p> */}
+
                     </div>
 
                     <button
@@ -141,8 +142,9 @@ export default async function Profile({params}: any){
                         </span>
                     </button>
                 </div>
-                
             </div>
+
+
         </div>
     );
 }

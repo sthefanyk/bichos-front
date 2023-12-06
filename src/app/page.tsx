@@ -1,7 +1,6 @@
 import Header from '@/components/Header';
 import ListCardAnimal from '@/components/ListCardAnimal';
 
-
 export default async function Home() {
 
     async function getPosts(url: string) {
@@ -21,8 +20,7 @@ export default async function Home() {
             posts: responseData.data,
             paginationPresenter: responseData.paginationPresenter
         }
-    } 
-
+    }
    
     return (
         <>

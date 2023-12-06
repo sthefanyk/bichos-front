@@ -17,7 +17,7 @@ const Navbar = () => {
     const handleMenu = () => {
         setMenu((prevMenu) => !prevMenu);
     };
-
+    
     if (page.includes('/login') || page.includes('/register')) {
         return null;
     }

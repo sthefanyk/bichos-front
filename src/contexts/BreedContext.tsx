@@ -22,7 +22,7 @@ export function BreedProvider({ children }: any) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch("http://localhost:3000/breed", {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_URL_API}/breed`, {
                     cache: "no-store",
                 });
 

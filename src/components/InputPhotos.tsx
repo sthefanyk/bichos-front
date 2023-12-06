@@ -44,7 +44,7 @@ const InputPhotos = ({photos, setPhotos}: InputPhotosProps) => {
                 formData.append('type', "0");
     
                 try {
-                    const response = await fetch('http://localhost:3000/gallery/image', {
+                    const response = await fetch(`${process.env.NEXT_PUBLIC_URL_API}/gallery/image`, {
                         method: 'POST',
                         body: formData,
                     });
@@ -70,7 +70,7 @@ const InputPhotos = ({photos, setPhotos}: InputPhotosProps) => {
 
     const removeImage = async (id: string) => {
         try {
-            await fetch(`http://localhost:3000/gallery/image/${id}`, {
+            await fetch(`${process.env.NEXT_PUBLIC_URL_API}/gallery/image/${id}`, {
                 method: 'DELETE'
             });
         } catch (error) {
